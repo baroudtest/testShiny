@@ -145,5 +145,5 @@ server <- function(input, output) {
 shinyApp(ui = ui, server = server)
 
 #Ceci est un test, est ce que vous le voyez ? Ouiiiiiiiiii
-#Encore un dernier test
+#Encore un dernier test afin de le garder tel quel
 
