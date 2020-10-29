@@ -144,4 +144,4 @@ server <- function(input, output) {
 # Run the app ----
 shinyApp(ui = ui, server = server)
 
-#Ceci est un test, est ce que vous le voyez ? 
+#Ceci est un test, est ce que vous le voyez ? Ouiiiiiiiiii
