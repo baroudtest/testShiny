@@ -11,7 +11,7 @@ ui <- fluidPage(
       
       radioButtons("disp", "display",choices= c(Head ="head", All = "all"), selected= "head"),        
       br(),
-   
+      h2("Ceci est un test de la part de Florine, me recevez-vous ?")
       br(),
       br(),
       
