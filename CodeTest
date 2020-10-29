@@ -146,3 +146,5 @@ shinyApp(ui = ui, server = server)
 
 #Ceci est un test, est ce que vous le voyez ? Ouiiiiiiiiii
 
+#Mon test aussi 
+
