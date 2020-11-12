@@ -30,7 +30,8 @@ sidebarLayout(
                           column(width = 4,
                                  tableOutput("ab_rel") 
                           )
-                        )
+                        ),
+                        downloadButton("downloadData", "Download")
                ),
                tabPanel("Graphique",
                         fluidRow(
@@ -62,14 +63,19 @@ sidebarLayout(
  
 # traitement de données, récupération des inputs, préparation des outputs--
 server <- function(input, output) {
-  
-output$ab_rel <- renderTable({
+  datasetInput <- reactive({
+
   req(input$file)
   df<- read.csv(input$file$datapath,
                 header = TRUE,
                 sep = ";",
                 quote = '"')
-  
+  df$Species <- as.character(df$Species)
+  df$Camera <- as.character(df$Camera)
+  df$Site <- as.character(df$Site)
+  df$Image1 <- as.character(df$Image1)
+  df$Date <- as.character(df$Date)
+  df$Hour <- as.character (df$Hour)
   #exclure no_sp, indetermined
   no_sp <- which(df$Species == "no_sp")
   df <- df[-no_sp, ]
@@ -165,7 +171,18 @@ output$homme <- renderText({
   d <- (b / ligne) *100
   d
 })
+output$ab_rel <- renderTable({
+  datasetInput()
+})
 
+output$downloadData <- downloadHandler(
+  filename = function() {
+    paste("Liste", ".csv", sep = "")
+  },
+  content = function(file) {
+    write.table(datasetInput(), file,quote = TRUE, sep = ";" ,row.names = FALSE, col.names = FALSE)
+  }
+)
 
 }
 
