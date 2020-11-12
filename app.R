@@ -1,18 +1,53 @@
 library(shiny)
 library(lubridate)
 
-# Interface utilisateur, agencement sur la page, outils d'interactions (uploader un fichier, case à cocher, sliders,...)----
+## Agencement fluipage sur la page, outils d'interactions (uploader un fichier, case à cocher, sliders,...)----
 ui <- fluidPage(
-
+## Contrôle sidebar -------------------------------------------
 sidebarLayout(
   sidebarPanel(
-    fileInput("file",h2("table de données")), # fileIput est l'outil permettant de lire un fichier de son choix à uploader
-    ),
-
+    
+# File input 
+    fileInput("file",h2("Table de données")) # fileIput est l'outil permettant de lire un fichier de son choix à uploader
+    , 
+  
+# Note utilisateur
+  h4(div("Note importante concernant le format du jeu de données d'entrée :", style = "color:red")),
+  p("1) Le jeu de donnée doit être au", strong("format de sortie CameraBase suivant"), "et doit comporter des colonnes ayant ces noms exacts, écrits dans cet ordre respectif :"),
+  p(div(em("'Species'",
+           br(),
+           "'Camera'",
+           br(),
+           "'Site'",
+           br(),
+           "'Individuals'",
+           br(),
+           "'Date'",
+           br(),
+           "'Hour'",
+           br(),
+           "'zone d'étude'",
+           br(),
+           "'Image1'"), style = "color:blue")
+  ),
+  p("- La colonne :", br(), div(em("'inventory_ID'"),style = "color:blue"),br(),"doit être rajoutée afin de renseigner le numéro d'inventaire pour une comparaison périodique"),
+  
+  p("2) Les individus identifiés doivent être renseignés dans le champ 'Species' par leur", strong("genre en majuscule"), "et leur", strong("espèce en minuscule"), "exemple :"),
+  div(em("'Loxodonta cyclotis'"),style = "color:blue"),
+  br(),
+  p("- S'ils ne sont pas visibles, ils doivent être renseignés par :"),
+  div(em("'no_sp'"), style = "color:blue"),
+  br(),
+  p("- S'ils ne peuvent être identifiés, ils doivent être renseignés par :"),
+  div(em("'indetermined'"), style = "color:blue")
+),
+## Ouverture des onglets ----------------------------------------------
   mainPanel(tabsetPanel(
+## Onglet "Caractéristique des communautés" ---------------------------------------------
     tabPanel("Caractéristiques des communautés",
              fluidRow(
                column(width = 12,
+                      "Cette application Shiny est dédiée à l’analyse de données issues d’inventaire par pièges photographiques. Elle permet par une analyse automatisée de fournir quelques indicateurs qui caractérisent les inventaires de faune menés, la communauté et les espèces animale détectées le tout sous forme de tableaux, graphiques et cartes facilement téléchargeables.",
                       br(),
                       br(),
                       p("Indice de détection nocturne en pourcents"),
@@ -23,44 +58,41 @@ sidebarLayout(
                       br(),
                       textOutput("homme")
                ))),
+## Onglet "Analyse par espèce" ---------------------------------
     tabPanel("Analyse par espèce",
-             tabsetPanel(
-               tabPanel("Liste",
-                        fluidRow(
-                          column(width = 4,
-                                 tableOutput("ab_rel") 
-                          )
-                        ),
-                        downloadButton("downloadData", "Download")
-               ),
-               tabPanel("Graphique",
-                        fluidRow(
-                          column(width = 4,
-                                 h1("HI!") 
-                          ) 
-                        )
-               )
-             ) #Close inner tabsetPanel
-    ),
-    
+             fluidRow(
+               column(width = 12,
+                                 "De multiples indices peuvent être générés à partir des données 
+                                  obtenues par pièges photographiques. Nous avons décidé de vous 
+                                  présenter seulement le taux de détection standardisé par l’effort 
+                                  d’inventaire, communément décrit sous le terme de RAI en anglais 
+                                  (Relative Abundance index) . D’autres analyses sont possibles et des 
+                                  ressources sont mobilisables dans la partie « Pour en savoir plus »",
+                                  br(),
+                                  tableOutput("ab_rel"),
+                                  downloadButton("downloadData", "Download")
+                                 
+                          
+    ))),
+
+## Onglet "Cartes" ----------------------------------------------
     tabPanel("Cartes",
              fluidRow(
                column(width = 12,
                       h1("HI!")
-               )
-             )
-    )
+    )))
+
+## Fermeture des onglets ----------------------------------------
+
   ) #Close tabset panel
   
-  )
+  ) #Close mainpanel
 
 )
 
 )
 
-# mainPanel ..... : l'emplacement ou apparaitra le fichier exporté sousle bon format, le fichier est enregistré parmis les Outputs sous le nom "contents"
-
- 
+## Partie Server ------------------------------------------------ 
 # traitement de données, récupération des inputs, préparation des outputs--
 server <- function(input, output) {
   datasetInput <- reactive({
@@ -186,5 +218,6 @@ output$downloadData <- downloadHandler(
 
 }
 
-# Run the app ----
+## Run the app ---------------------------------------------------
 shinyApp(ui = ui, server = server)
+##Ok
