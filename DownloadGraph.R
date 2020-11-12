@@ -14,7 +14,7 @@ ui <- fluidPage(
     sidebarPanel(
       numericInput("var1", 
                    h3("Numeric input"), 
-                   value = 1),
+                   value = 4),
       numericInput("var2", 
                    h3("Numeric input"), 
                    value = 1)
