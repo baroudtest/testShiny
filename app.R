@@ -9,7 +9,7 @@ sidebarLayout(
     
 # File input 
     fileInput("file",h2("Table de données")) # fileIput est l'outil permettant de lire un fichier de son choix à uploader
-    , 
+    , br(),
   
 # Note utilisateur
   h4(div("Note importante concernant le format du jeu de données d'entrée :", style = "color:red")),
