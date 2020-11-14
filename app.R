@@ -50,7 +50,6 @@ sidebarLayout(
                       "Cette application Shiny est dédiée à l’analyse de données issues d’inventaire par pièges photographiques. Elle permet par une analyse automatisée de fournir quelques indicateurs qui caractérisent les inventaires de faune menés, la communauté et les espèces animale détectées le tout sous forme de tableaux, graphiques et cartes facilement téléchargeables.",
                       br(),
                       br(),
-                      br(),
                       p("Indice de détection nocturne en pourcents"),
                       textOutput("indnoc"),
                       br(),
