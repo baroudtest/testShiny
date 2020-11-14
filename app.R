@@ -9,7 +9,7 @@ sidebarLayout(
     
 # File input 
     fileInput("file",h2("Table de données")) # fileIput est l'outil permettant de lire un fichier de son choix à uploader
-    , br(),
+    ,
   
 # Note utilisateur
   h4(div("Note importante concernant le format du jeu de données d'entrée :", style = "color:red")),
@@ -48,6 +48,7 @@ sidebarLayout(
              fluidRow(
                column(width = 12,
                       "Cette application Shiny est dédiée à l’analyse de données issues d’inventaire par pièges photographiques. Elle permet par une analyse automatisée de fournir quelques indicateurs qui caractérisent les inventaires de faune menés, la communauté et les espèces animale détectées le tout sous forme de tableaux, graphiques et cartes facilement téléchargeables.",
+                      br(),
                       br(),
                       br(),
                       p("Indice de détection nocturne en pourcents"),
