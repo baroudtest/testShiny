@@ -95,69 +95,61 @@ sidebarLayout(
 ## Partie Server ------------------------------------------------ 
 # traitement de données, récupération des inputs, préparation des outputs--
 server <- function(input, output) {
-  datasetInput <- reactive({
+  data <- reactive({
 
-  req(input$file)
-  df<- read.csv(input$file$datapath,
-                header = TRUE,
-                sep = ";",
-                quote = '"',
-                colClasses = "character")
- 
-  #exclure no_sp, indetermined
-  no_sp <- which(df$Species == "no_sp")
-  df <- df[-no_sp, ]
-  indet <- which(df$Species == "indetermined")
-  df <- df[-indet, ]
-  #remplacer cephalophe par cephalophus
-  library(doBy)
-  df$Species <- recodeVar(df$Species,"Cephalophe spp.","Cephalophus spp.")
-  #Regrouper repetitions (30 min)
-  datf <- data.frame(1,2,3,4,5,6,7)
-  
-  k <- colnames(df)
-  colnames(datf) <- k 
-  l <- nrow(df)
-  s <- 1
-  r <- 1
-  for (i in 1:l) {
+    req(input$file)
+    df<- read.csv(input$file$datapath,
+                  header = TRUE,
+                  sep = ";",
+                  quote = '"',
+                  colClasses = "character")
+    df$Individuals <- as.numeric(df$Individuals)
+    #exclure no_sp, indetermined
+    no_sp <- which(df$Species == "no_sp")
+    df <- df[-no_sp, ]
+    indet <- which(df$Species == "indetermined")
+    df <- df[-indet, ]
+    #remplacer cephalophe par cephalophus
+    library(doBy)
+    df$Species <- recodeVar(df$Species,"Cephalophe spp.","Cephalophus spp.")
+    #Regrouper repetitions (30 min)
+    datf <- data.frame(1,2,3,4,5,6,7)
     
-    if (i < l) {s <- i +1 }
-    #heure <- factor(df$Hour[c(i)])
-    #a <- lubridate::hms(as.character(heure))
-    #c <- hour(a)
-    #if (c[c(1)] > 18) { }
-    #else  if (c[c(1)] < 6) {b <- b + df$Individuals[c(i)]}
-    
-    heurea <- factor(df$Hour[c(i)])
-    heureb <- factor(df$Hour[c(s)])
-    
-    a <- lubridate ::hms(as.character(heurea))
-    b <- lubridate ::hms(as.character(heureb))
-    
-    g <- as.duration(b-a)
-    
-    
-    if (g > 1800)  {datf[c(r),] <- df[c(i),]
-    
-    r <- r+1}
-    else if (df$Species[c(i)] == df$Species[c(s)]) {}
-    else {datf[c(r),] <- df[c(i),]
-    r <- r+1
-    
+    k <- colnames(df)
+    colnames(datf) <- k 
+    l <- nrow(df)
+    s <- 1
+    r <- 1
+    for (i in 1:l) {
+      
+      if (i < l) {s <- i +1 }
+      #heure <- factor(df$Hour[c(i)])
+      #a <- lubridate::hms(as.character(heure))
+      #c <- hour(a)
+      #if (c[c(1)] > 18) { }
+      #else  if (c[c(1)] < 6) {b <- b + df$Individuals[c(i)]}
+      
+      heurea <- factor(df$Hour[c(i)])
+      heureb <- factor(df$Hour[c(s)])
+      
+      a <- lubridate ::hms(as.character(heurea))
+      b <- lubridate ::hms(as.character(heureb))
+      
+      g <- as.duration(b-a)
+      
+      
+      if (g > 1800)  {datf[c(r),] <- df[c(i),]
+      
+      r <- r+1}
+      else if (df$Species[c(i)] == df$Species[c(s)]) {}
+      else {datf[c(r),] <- df[c(i),]
+      r <- r+1
+      
+      }
     }
-  }
-  datf
+    datf
+  })
   
-  
-  
-  datf$Individuals <- as.numeric(datf$Individuals) 
-  aggregate <- aggregate(Individuals ~ Species+Site, data = datf, sum) 
-  tot <- sum(datf$Individuals)
-  abondance <- aggregate$Individuals/tot
-  cbind(aggregate,abondance)
-  
-})
 
 output$indnoc <- renderText({
   req(input$file)
@@ -201,7 +193,10 @@ output$homme <- renderText({
 })
 
 output$ab_rel <- renderTable({
-  datasetInput()
+  aggregate <- aggregate(Individuals ~ Species+Site, data = data(), sum) 
+  tot <- sum(data()$Individuals)
+  abondance <- aggregate$Individuals/tot
+  cbind(aggregate,abondance)
 })
 
 output$downloadData <- downloadHandler(
