@@ -1,6 +1,7 @@
 library(shiny)
 library(lubridate)
 
+
 ## Agencement fluipage sur la page, outils d'interactions (uploader un fichier, case à cocher, sliders,...)----
 ui <- fluidPage(
 ## Contrôle sidebar -------------------------------------------
