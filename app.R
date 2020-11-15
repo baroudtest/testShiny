@@ -155,19 +155,15 @@ server <- function(input, output) {
 
 output$indnoc <- renderText({
   req(input$file)
-  df<- read.csv(input$file$datapath,
-                header = TRUE,
-                sep = ";",
-                quote = '"')
   
-  ligne <- nrow(df)
+  ligne <- nrow(data())
   b <- 0
   for (i in 1:ligne) {
-    heure <- factor(df$Hour[c(i)])
+    heure <- factor(data()$Hour[c(i)])
     a <- lubridate::hms(as.character(heure))
     c <- hour(a)
     if (c[c(1)] > 18) { }
-    else  if (c[c(1)] < 6) {b <- b + df$Individuals[c(i)]}
+    else  if (c[c(1)] < 6) {b <- b + data()$Individuals[c(i)]}
     
   }
   
@@ -177,16 +173,12 @@ output$indnoc <- renderText({
 
 output$homme <- renderText({
   req(input$file)
-  df<- read.csv(input$file$datapath,
-                header = TRUE,
-                sep = ";",
-                quote = '"')
   
-  ligne <- nrow(df)
+  ligne <- nrow(data())
   b <- 0
   for (i in 1:ligne) {
-    if (df$Species[c(i)] == "Homo sapiens")
-    {b <- b + df$Individuals[c(i)]}
+    if (data()$Species[c(i)] == "Homo sapiens")
+    {b <- b + data()$Individuals[c(i)]}
     
   }
   
