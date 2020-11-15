@@ -103,13 +103,9 @@ server <- function(input, output) {
   df<- read.csv(input$file$datapath,
                 header = TRUE,
                 sep = ";",
-                quote = '"')
-  df$Species <- as.character(df$Species)
-  df$Camera <- as.character(df$Camera)
-  df$Site <- as.character(df$Site)
-  df$Image1 <- as.character(df$Image1)
-  df$Date <- as.character(df$Date)
-  df$Hour <- as.character (df$Hour)
+                quote = '"',
+                colClasses = "character")
+ 
   #exclure no_sp, indetermined
   no_sp <- which(df$Species == "no_sp")
   df <- df[-no_sp, ]
