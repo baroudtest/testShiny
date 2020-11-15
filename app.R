@@ -204,6 +204,7 @@ output$homme <- renderText({
   d <- (b / ligne) *100
   d
 })
+
 output$ab_rel <- renderTable({
   datasetInput()
 })
@@ -222,3 +223,4 @@ output$downloadData <- downloadHandler(
 ## Run the app ---------------------------------------------------
 shinyApp(ui = ui, server = server)
 ##Ok
+##Voyez-vous ce message ? (Flo)
