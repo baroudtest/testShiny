@@ -245,7 +245,7 @@ output$downloadData <- downloadHandler(
   # création du graphique, mise en couleur du "jour", nombre de 0 à 24h
   frete<- ggplot(eventdata, aes(x = eventhour, fill = Day)) + geom_histogram(breaks = seq(0, 
                                                                                               24)) + coord_polar(start = 0) + theme_minimal() + 
-    scale_fill_brewer() + ylab("Nombre de détection") + ggtitle("Répartition des détection par heure") + 
+    scale_fill_brewer() + ylab("Nombre de détection") + ggtitle(paste(input$selectSp,"Répartition des détection par heure", sep=" ")) + 
     scale_x_continuous("", limits = c(0, 24), breaks = seq(0, 24), labels = seq(0, 
                                                                                 24))
   
@@ -258,11 +258,16 @@ req(input$file)
   graph24()
 })
 
+# réception de l'spèce choisie en réactif
+
+chosenSp <- reactive ({
+  Input$selectSp
+})
+
 # gérer le téléchargement du graphique circulaire
 output$downloadGraph <- downloadHandler(
-  
   # filename pour définir le nom par défaut du fichier produit, Content pour choisir le graph dans l'image
-  filename = function() {paste("graph", '.png', sep='') },
+  filename = function() {paste(input$selectSp,"graph24", '.png', sep='') },
   content = function(file) {
     
     png(file)
