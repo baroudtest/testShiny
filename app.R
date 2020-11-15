@@ -77,7 +77,7 @@ sidebarLayout(
                                   tableOutput("ab_rel"),
                                   downloadButton("downloadData", "Download"),
                                   textInput("selectSp", h3("choisissez votre espèce"), 
-                                              value = "Sp."),
+                                              value = "All"),
                                   plotOutput("graph24h"),
                                   downloadButton("downloadGraph", "Download Graph")
                                 
@@ -129,27 +129,27 @@ server <- function(input, output) {
     l <- nrow(df)
     s <- 1
     r <- 1
+    # boucle lisant chaque ligne et la comparant avec la suivante, si plus de 30 min écoulées, écrit la ligne,
+    # si moins de 30 min écoulé, observe l'espèce, si elle sont égales, passe la ligne sans écrire la deuxième ligne
     for (i in 1:l) {
       
       if (i < l) {s <- i +1 }
-      #heure <- factor(df$Hour[c(i)])
-      #a <- lubridate::hms(as.character(heure))
-      #c <- hour(a)
-      #if (c[c(1)] > 18) { }
-      #else  if (c[c(1)] < 6) {b <- b + df$Individuals[c(i)]}
-      
+  
+      # Encodage des heures des deux lignes respectives
       heurea <- factor(df$Hour[c(i)])
       heureb <- factor(df$Hour[c(s)])
       
       a <- lubridate ::hms(as.character(heurea))
       b <- lubridate ::hms(as.character(heureb))
       
+      #calcul de la différence
       g <- as.duration(b-a)
       
-      
+      # vérification du critère temps
       if (g > 1800)  {datf[c(r),] <- df[c(i),]
       
-      r <- r+1}
+      r <- r+1} # avancement à la prochaine ligne du nouveau dataframe
+      #vérification du critère espèce 
       else if (df$Species[c(i)] == df$Species[c(s)]) {}
       else {datf[c(r),] <- df[c(i),]
       r <- r+1
@@ -159,12 +159,13 @@ server <- function(input, output) {
     datf
   })
   
-
+# indice d'occurence nocturne
 output$indnoc <- renderText({
   req(input$file)
   
   ligne <- nrow(data())
   b <- 0
+  #comptage des détection nocturne en observant chaque lingne de Data
   for (i in 1:ligne) {
     heure <- factor(data()$Hour[c(i)])
     a <- lubridate::hms(as.character(heure))
@@ -173,26 +174,31 @@ output$indnoc <- renderText({
     else  if (c[c(1)] < 6) {b <- b + data()$Individuals[c(i)]}
     
   }
-  
+  # nombre de détections nocturne sur nombre de détections totales
   d <- (b / ligne) *100
   d
 })
 
+# Indice de présence humaine
 output$homme <- renderText({
   req(input$file)
   
+  # prend le nombre de lignes totale
   ligne <- nrow(data())
   b <- 0
+  # compte le nombre de lignes correspondante à Homo sapiens
   for (i in 1:ligne) {
     if (data()$Species[c(i)] == "Homo sapiens")
     {b <- b + data()$Individuals[c(i)]}
     
   }
-  
+  # rapport du nombre de "Homo sapiens" sur le nombre de lignes totales
   d <- (b / ligne) *100
   d
 })
 
+# table des informations par espèces , abondance relative, nombre d'individus détecté
+# faudrait-il ajouer détection par mois ? 
 output$ab_rel <- renderTable({
   aggregate <- aggregate(Individuals ~ Species+Site, data = data(), sum) 
   tot <- sum(data()$Individuals)
@@ -201,7 +207,7 @@ output$ab_rel <- renderTable({
 })
 
 
-
+# Gérer le télchargement de la liste d'info par espèce
 output$downloadData <- downloadHandler(
   filename = function() {
     paste("Liste", ".csv", sep = "")
@@ -211,42 +217,60 @@ output$downloadData <- downloadHandler(
   }
 )
 
+# Création du graphique d'activité en 24h en réactive de façon à pouvoir le télécharger
+
+  graph24 <- reactive ({
+# récupérer l'espèce encodée 
   
-output$graph24h <- renderPlot({
-  req(input$file)
-  df<- read.csv(input$file$datapath,
-                header = TRUE,
-                sep = ";",
-                quote = '"')
   x <- as.character(input$selectSp)
   
-  if (input$selectSp != "Sp.")
+# récupérer le dataframe nettoyé
+  df <- data()
+# si "All" est encodé, graphique de toute les epsèces, si le nome d'une espèe est encodé, le prend en compte
+  if (input$selectSp != "All")
   df <- df[df$Species == x,]
   
+  # récupéré les heures concernées de l'espèce choisie
+  
   heurea <- df$Hour
-  
-  
-  
   a <- lubridate ::hms(as.character(heurea))
-  
   
   hour_of_event <- hour(a)
   
   eventdata <- data.frame(datetime = df$Date, eventhour = hour_of_event)
   
-  eventdata$Workday <- eventdata$eventhour %in% seq(6, 18)
+  # désignation de la période nocturne (entre 6h et 18h)
+  eventdata$Day <- eventdata$eventhour %in% seq(6, 18)
   
-  
-  frete<- ggplot(eventdata, aes(x = eventhour, fill = Workday)) + geom_histogram(breaks = seq(0, 
+  # création du graphique, mise en couleur du "jour", nombre de 0 à 24h
+  frete<- ggplot(eventdata, aes(x = eventhour, fill = Day)) + geom_histogram(breaks = seq(0, 
                                                                                               24)) + coord_polar(start = 0) + theme_minimal() + 
-    scale_fill_brewer() + ylab("Count") + ggtitle("Events by Time of day") + 
+    scale_fill_brewer() + ylab("Nombre de détection") + ggtitle("Répartition des détection par heure") + 
     scale_x_continuous("", limits = c(0, 24), breaks = seq(0, 24), labels = seq(0, 
                                                                                 24))
   
   frete
-  
-  
 })
+  
+# Encodage du graphique réactif en output de manière à l'afficher
+output$graph24h <- renderPlot({
+req(input$file)
+  graph24()
+})
+
+# gérer le téléchargement du graphique circulaire
+output$downloadGraph <- downloadHandler(
+  
+  # filename pour définir le nom par défaut du fichier produit, Content pour choisir le graph dans l'image
+  filename = function() {paste("graph", '.png', sep='') },
+  content = function(file) {
+    
+    png(file)
+    print(graph24())
+    dev.off() 
+  }
+  
+)
 
 }
 
