@@ -1,6 +1,7 @@
 library(shiny)
 library(lubridate)
 
+
 ## Agencement fluipage sur la page, outils d'interactions (uploader un fichier, case à cocher, sliders,...)----
 ui <- fluidPage(
 ## Contrôle sidebar -------------------------------------------
@@ -13,7 +14,7 @@ sidebarLayout(
   
 # Note utilisateur
   h4(div("Note importante concernant le format du jeu de données d'entrée :", style = "color:red")),
-  p("1) Le jeu de donnée doit être au", strong("format de sortie CameraBase suivant"), "et doit comporter des colonnes ayant ces noms exacts, écrits dans cet ordre respectif :"),
+  p("1) Le jeu de donnée doit être au", strong("format de sortie .csv attribué par CameraBase, organisé comme suit"), "et doit comporter des colonnes ayant ces noms exacts, écrits dans cet ordre respectif :"),
   p(div(em("'Species'",
            br(),
            "'Camera'",
@@ -30,7 +31,7 @@ sidebarLayout(
            br(),
            "'Image1'"), style = "color:blue")
   ),
-  p("- La colonne :", br(), div(em("'inventory_ID'"),style = "color:blue"),br(),"doit être rajoutée afin de renseigner le numéro d'inventaire pour une comparaison périodique"),
+  p("- La colonne :", br(), div(em("'inventory_ID'"),style = "color:blue"),br(),"Doit être rajoutée afin de renseigner le numéro d'inventaire pour une comparaison périodique. Il doit être compris entre 1 et n avec n le numéro du dernier inventaire."),
   
   p("2) Les individus identifiés doivent être renseignés dans le champ 'Species' par leur", strong("genre en majuscule"), "et leur", strong("espèce en minuscule"), "exemple :"),
   div(em("'Loxodonta cyclotis'"),style = "color:blue"),
@@ -48,6 +49,7 @@ sidebarLayout(
              fluidRow(
                column(width = 12,
                       "Cette application Shiny est dédiée à l’analyse de données issues d’inventaire par pièges photographiques. Elle permet par une analyse automatisée de fournir quelques indicateurs qui caractérisent les inventaires de faune menés, la communauté et les espèces animale détectées le tout sous forme de tableaux, graphiques et cartes facilement téléchargeables.",
+                      br(),
                       br(),
                       br(),
                       p("Indice de détection nocturne en pourcents"),
