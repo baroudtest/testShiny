@@ -1,5 +1,8 @@
 library(shiny)
 library(lubridate)
+library(circular)
+library(lubridate)
+library(ggplot2)
 
 ## Agencement fluipage sur la page, outils d'interactions (uploader un fichier, case à cocher, sliders,...)----
 ui <- fluidPage(
@@ -70,8 +73,12 @@ sidebarLayout(
                                   ressources sont mobilisables dans la partie « Pour en savoir plus »",
                                   br(),
                                   tableOutput("ab_rel"),
-                                  downloadButton("downloadData", "Download")
-                                 
+                                  downloadButton("downloadData", "Download"),
+                                  textInput("selectSp", h3("choisissez votre espèce"), 
+                                              value = "Sp."),
+                                  plotOutput("graph24h"),
+                                  downloadButton("downloadGraph", "Download Graph")
+                                
                           
     ))),
 
@@ -208,6 +215,8 @@ output$ab_rel <- renderTable({
   datasetInput()
 })
 
+
+
 output$downloadData <- downloadHandler(
   filename = function() {
     paste("Liste", ".csv", sep = "")
@@ -216,6 +225,43 @@ output$downloadData <- downloadHandler(
     write.table(datasetInput(), file,quote = TRUE, sep = ";" ,row.names = FALSE, col.names = FALSE)
   }
 )
+
+  
+output$graph24h <- renderPlot({
+  req(input$file)
+  df<- read.csv(input$file$datapath,
+                header = TRUE,
+                sep = ";",
+                quote = '"')
+  x <- as.character(input$selectSp)
+  
+  if (input$selectSp != "Sp.")
+  df <- df[df$Species == x,]
+  
+  heurea <- df$Hour
+  
+  
+  
+  a <- lubridate ::hms(as.character(heurea))
+  
+  
+  hour_of_event <- hour(a)
+  
+  eventdata <- data.frame(datetime = df$Date, eventhour = hour_of_event)
+  
+  eventdata$Workday <- eventdata$eventhour %in% seq(6, 18)
+  
+  
+  frete<- ggplot(eventdata, aes(x = eventhour, fill = Workday)) + geom_histogram(breaks = seq(0, 
+                                                                                              24)) + coord_polar(start = 0) + theme_minimal() + 
+    scale_fill_brewer() + ylab("Count") + ggtitle("Events by Time of day") + 
+    scale_x_continuous("", limits = c(0, 24), breaks = seq(0, 24), labels = seq(0, 
+                                                                                24))
+  
+  frete
+  
+  
+})
 
 }
 
