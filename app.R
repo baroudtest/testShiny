@@ -214,7 +214,7 @@ output$downloadData <- downloadHandler(
   },
   content = function(file) {
     write.table(datasetInput(), file,quote = TRUE, sep = ";" ,row.names = FALSE, col.names = FALSE)
-  }
+  } # !!! datasetInput n'est plus a jour depuis les modifs de la variable pretraitee (je regarde à ca bientot)
 )
 
 # Création du graphique d'activité en 24h en réactive de façon à pouvoir le télécharger
