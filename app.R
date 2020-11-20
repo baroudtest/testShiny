@@ -14,8 +14,15 @@ sidebarLayout(
 # File input 
     fileInput("file",h2("Table de données")) # fileIput est l'outil permettant de lire un fichier de son choix à uploader
     ,
-  
+    br(),
+    div(textOutput("erreur"), style = "color:red"),
+    br(),
+   
+   
 # Note utilisateur
+
+ 
+
   h4(div("Note importante concernant le format du jeu de données d'entrée :", style = "color:red")),
   p("1) Le jeu de donnée doit être au", strong("format de sortie .csv attribué par CameraBase, organisé comme suit"), "et doit comporter des colonnes ayant ces noms exacts, écrits dans cet ordre respectif :"),
   p(div(em("'Species'",
@@ -54,6 +61,8 @@ sidebarLayout(
                       "Cette application Shiny est dédiée à l’analyse de données issues d’inventaire par pièges photographiques. Elle permet par une analyse automatisée de fournir quelques indicateurs qui caractérisent les inventaires de faune menés, la communauté et les espèces animale détectées le tout sous forme de tableaux, graphiques et cartes facilement téléchargeables.",
                       br(),
                       br(),
+                      
+                      
                       br(),
                       p("Indice de détection nocturne en pourcents"),
                       textOutput("indnoc"),
@@ -77,7 +86,9 @@ sidebarLayout(
                                   tableOutput("ab_rel"),
                                   downloadButton("downloadData", "Download"),
                                   textInput("selectSp", h3("choisissez votre espèce"), 
-                                              value = "All"),
+                                              value = "All"), 
+                      h3("Cacher/Dérouler le graphique"),
+                      checkboxInput("affigraphique", "Afficher", value = TRUE),
                                   plotOutput("graph24h"),
                                   downloadButton("downloadGraph", "Download Graph")
                                 
@@ -254,6 +265,7 @@ output$downloadData <- downloadHandler(
   
 # Encodage du graphique réactif en output de manière à l'afficher
 output$graph24h <- renderPlot({
+  req(input$affigraphique == TRUE)
 req(input$file)
   graph24()
 })
@@ -261,6 +273,7 @@ req(input$file)
 # réception de l'spèce choisie en réactif
 
 chosenSp <- reactive ({
+  
   Input$selectSp
 })
 
@@ -276,6 +289,115 @@ output$downloadGraph <- downloadHandler(
   }
   
 )
+
+err <- reactive({
+  req(input$file)
+  
+  LengthOk <- 0
+  SpOk <- 0
+  CamOk <- 0
+  SiOk <- 0
+  InOk <- 0
+  DaOk <- 0
+  HoOk <- 0
+  ImOk <- 0
+  x <- c(1,2,3,4,5,6,7)
+  
+  x <- names(data())
+  if (length(x) == 7) { LengthOk <- 1 }
+   
+  if (LengthOk == 1) {LOk <- "Length Ok"}
+  else { LOk <- "La feuille de donnée contient trop de colonnes"} 
+  
+  if (x[1] == "Species") {SpOk <- 1 }
+  else if (x[2] == "Species") {SpOk <-1 }
+  else if (x[3] == "Species") {SpOk <-1 }
+  else if (x[4] == "Species") {SpOk <-1 }
+  else if (x[5] == "Species") {SpOk <-1 }
+  else if (x[6] == "Species") {SpOk <-1 }
+  else if (x[7] == "Species") {SpOk <-1 }
+  
+  if (SpOk == 1) {SOk <- "Species Ok"}
+  else { SOk <- "Erreur, impossible de trouver la colonne 'Species'. vérifiez la syntaxe du jeu de donnée"}
+  
+  if (x[1] == "Camera") {CamOk <- 1 }
+  else if (x[2] == "Camera") {CamOk <-1 }
+  else if (x[3] == "Camera") {CamOk <-1 }
+  else if (x[4] == "Camera") {CamOk <-1 }
+  else if (x[5] == "Camera") {CamOk <-1 }
+  else if (x[6] == "Camera") {CamOk <-1 }
+  else if (x[7] == "Camera") {CamOk <-1 }
+  
+  if (CamOk == 1) {COk <- "Camera Ok"}
+  else { COk <- "Erreur, impossible de trouver la colonne 'Camera'. vérifiez la syntaxe du jeu de donnée"}
+  
+  if (x[1] == "Site") {SiOk <- 1 }
+  else if (x[2] == "Site") {SiOk <-1 }
+  else if (x[3] == "Site") {SiOk <-1 }
+  else if (x[4] == "Site") {SiOk <-1 }
+  else if (x[5] == "Site") {SiOk <-1 }
+  else if (x[6] == "Site") {SiOk <-1 }
+  else if (x[7] == "Site") {SiOk <-1 }
+  
+  if (SiOk == 1) {StOk <- "Site Ok"}
+  else { StOk <- "Erreur, impossible de trouver la colonne 'Site'. vérifiez la syntaxe du jeu de donnée"}
+  
+  if (x[1] == "Individuals") {InOk <- 1 }
+  else if (x[2] == "Individuals") {InOk <-1 }
+  else if (x[3] == "Individuals") {InOk <-1 }
+  else if (x[4] == "Individuals") {InOk <-1 }
+  else if (x[5] == "Individuals") {InOk <-1 }
+  else if (x[6] == "Individuals") {InOk <-1 }
+  else if (x[7] == "Individuals") {InOk <-1 }
+
+  if (InOk == 1) {IOk <- "Individuals Ok"}
+  else { IOk <- "Erreur, impossible de trouver la colonne 'Individuals'. vérifiez la syntaxe du jeu de donnée"}
+  
+  if (x[1] == "Date") {DaOk <- 1 }
+  else if (x[2] == "Date") {DaOk <-1 }
+  else if (x[3] == "Date") {DaOk <-1 }
+  else if (x[4] == "Date") {DaOk <-1 }
+  else if (x[5] == "Date") {DaOk <-1 }
+  else if (x[6] == "Date") {DaOk <-1 }
+  else if (x[7] == "Date") {DaOk <-1 }
+  
+  if (DaOk == 1) {DOk <- "Data Ok"}
+  else { DOk <- "Erreur, impossible de trouver la colonne 'Date'. vérifiez la syntaxe du jeu de donnée"}
+
+  
+  if (x[1] == "Hour") {HoOk <- 1 }
+  else if (x[2] == "Hour") {HoOk <-1 }
+  else if (x[3] == "Hour") {HoOk <-1 }
+  else if (x[4] == "Hour") {HoOk <-1 }
+  else if (x[5] == "Hour") {HoOk <-1 }
+  else if (x[6] == "Hour") {HoOk <-1 }
+  else if (x[7] == "Hour") {HoOk <-1 }
+  
+  if (HoOk == 1) {HOk <- "Hour Ok"}
+  else { HOk <- "Erreur, impossible de trouver la colonne 'Hour'. vérifiez la syntaxe du jeu de donnée"}
+  
+  if (x[1] == "Image1") {ImOk <- 1 }
+  else if (x[2] == "Image1") {ImOk <-1 }
+  else if (x[3] == "Image1") {ImOk <-1 }
+  else if (x[4] == "Image1") {ImOk <-1 }
+  else if (x[5] == "Image1") {ImOk <-1 }
+  else if (x[6] == "Image1") {ImOk <-1 }
+  else if (x[7] == "Image1") {ImOk <-1 }
+  
+  if (ImOk == 1) {IgOk <- "Image Ok"}
+  else { IgOk <- "Erreur, impossible de trouver la colonne 'Image'. vérifiez la syntaxe du jeu de donnée"}
+
+err <- c(LOk, SOk, DOk, COk, StOk, IOk, DOk, HOk, IgOk)
+err
+  
+})
+
+output$erreur <- renderText({
+ req(input$file)
+  err()
+})
+
+
 
 }
 
