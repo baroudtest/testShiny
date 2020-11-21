@@ -85,8 +85,9 @@ sidebarLayout(
                                   br(),
                                   tableOutput("ab_rel"),
                                   downloadButton("downloadData", "Download"),
-                                  textInput("selectSp", h3("choisissez votre espèce"), 
-                                              value = "All"), 
+                                  selectizeInput("selectSp", 
+                                                 h3("choisissez votre espèce"),
+                                                 choices = ""), 
                       h3("Cacher/Dérouler le graphique"),
                       checkboxInput("affigraphique", "Afficher", value = TRUE),
                                   plotOutput("graph24h"),
@@ -114,7 +115,7 @@ sidebarLayout(
 
 ## Partie Server ------------------------------------------------ 
 # traitement de données, récupération des inputs, préparation des outputs--
-server <- function(input, output) {
+server <- function(input, output, session) {   #Objet "session" rajouté pour le bon fonctionnement de l'observe
   data <- reactive({
 
     req(input$file)
@@ -227,6 +228,15 @@ output$downloadData <- downloadHandler(
     write.table(datasetInput(), file,quote = TRUE, sep = ";" ,row.names = FALSE, col.names = FALSE)
   } # !!! datasetInput n'est plus a jour depuis les modifs de la variable pretraitee (je regarde à ca bientot)
 )
+
+#Sélection de l'espèce
+observe({
+  updateSelectizeInput(
+    session,
+    inputId = "selectSp",
+    choices = c(data()$Species, "All")
+  )  
+})
 
 # Création du graphique d'activité en 24h en réactive de façon à pouvoir le télécharger
 
