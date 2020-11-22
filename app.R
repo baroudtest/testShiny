@@ -12,6 +12,14 @@ sidebarLayout(
   sidebarPanel(
     
 # File input 
+    fileInput("status",h2("Table IUCN")) # fileIput est l'outil permettant de lire un fichier de son choix à uploader
+    ,
+    
+    h5("Le fichier à uploader ci-dessus est téléchargeable dans l'onglet Analyse & reporting du site FauneFac, il est intitulé statuts.csv"),
+    br(),
+    h5("(ou à uploader du serveur de la fac : soit fait par l'utilisateur, soit automatique)"),
+    br(),
+    br(),
     fileInput("file",h2("Table de données")) # fileIput est l'outil permettant de lire un fichier de son choix à uploader
     ,
     br(),
@@ -20,8 +28,6 @@ sidebarLayout(
    
    
 # Note utilisateur
-
- 
 
   h4(div("Note importante concernant le format du jeu de données d'entrée :", style = "color:red")),
   p("1) Le jeu de donnée doit être au", strong("format de sortie .csv attribué par CameraBase, organisé comme suit"), "et doit comporter des colonnes ayant ces noms exacts, écrits dans cet ordre respectif :"),
@@ -116,6 +122,18 @@ sidebarLayout(
 ## Partie Server ------------------------------------------------ 
 # traitement de données, récupération des inputs, préparation des outputs--
 server <- function(input, output, session) {   #Objet "session" rajouté pour le bon fonctionnement de l'observe
+  
+  IUCN <- reactive({
+    
+    req(input$status)
+    esp <- read.csv(input$status$datapath,
+                header = TRUE,
+                sep = ";",
+                quote = '"',
+                colClasses = "character")
+    esp
+  })
+  
   data <- reactive({
 
     req(input$file)
@@ -214,10 +232,16 @@ output$homme <- renderText({
 output$ab_rel <- renderTable({
   nb <- aggregate(Individuals ~ Species+Site, data = data(), sum)
   jours <- aggregate(Individuals ~ Species+Site+Date, data = data(), sum) # ! colonne site ou choix prealable ?
-  # utiliser length et unique
+  nj <- aggregate(Date ~ Species+Site, data = jours, length)
+  table <- merge(nb,nj,by=c("Species","Site"))
+  table$Date <- table$Individuals/table$Date
   tot <- sum(data()$Individuals)
-  abondance <- aggregate$Individuals/tot
-  cbind(nb,abondance)
+  ab <- (table$Individuals/tot)*100
+  table <- cbind(table,ab)
+  table <- merge(table,IUCN(),by="Species",all.x=T)
+  names(table) <- c("Espèce","Site","Nombre d'individus","Taux de détection (nb par jour)",
+                    "Abondance relative (en %)","Statut IUCN")
+  table
 })
 
 
