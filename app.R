@@ -1,9 +1,12 @@
 library(shiny)
 library(lubridate)
 library(circular)
-library(lubridate)
 library(ggplot2)
 
+#install.packages("ggplot2")
+#install.packages("circular")
+#install.packages("shiny")
+#install.packages("lubridate")
 
 ## Agencement fluipage sur la page, outils d'interactions (uploader un fichier, case à cocher, sliders,...)----
 ui <- fluidPage(
