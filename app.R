@@ -15,14 +15,23 @@ sidebarLayout(
     fileInput("file",h2("Table de données")) # fileIput est l'outil permettant de lire un fichier de son choix à uploader
     ,
     br(),
-    div(textOutput("erreur"), style = "color:red"),
+    div(textOutput("erreur1"), style = "color:red"),
+    div(textOutput("erreur2"), style = "color:red"),
+    div(textOutput("erreur3"), style = "color:red"),
+    div(textOutput("erreur4"), style = "color:red"),
+    div(textOutput("erreur5"), style = "color:red"),
+    div(textOutput("erreur6"), style = "color:red"),
+    div(textOutput("erreur7"), style = "color:red"),
+    div(textOutput("erreur8"), style = "color:red"),
+    div(textOutput("erreur9"), style = "color:red"),
     br(),
    
    
 # Note utilisateur
 
- 
-
+ tabsetPanel(
+tabPanel("Afficher la Note d'utilisateur",
+         fluidRow(
   h4(div("Note importante concernant le format du jeu de données d'entrée :", style = "color:red")),
   p("1) Le jeu de donnée doit être au", strong("format de sortie .csv attribué par CameraBase, organisé comme suit"), "et doit comporter des colonnes ayant ces noms exacts, écrits dans cet ordre respectif :"),
   p(div(em("'Species'",
@@ -51,7 +60,12 @@ sidebarLayout(
   br(),
   p("- S'ils ne peuvent être identifiés, ils doivent être renseignés par :"),
   div(em("'indetermined'"), style = "color:blue")
-),
+)),
+tabPanel("Cacher la Note d'utilisateur",
+         fluidRow(
+         br()
+))
+)),
 ## Ouverture des onglets ----------------------------------------------
   mainPanel(tabsetPanel(
 ## Onglet "Caractéristique des communautés" ---------------------------------------------
@@ -402,10 +416,59 @@ err
   
 })
 
-output$erreur <- renderText({
+output$erreur1 <- renderText({
  req(input$file)
-  err()
+  err()[1]
 })
+
+
+output$erreur2 <- renderText({
+  req(input$file)
+  err()[2]
+})
+
+
+output$erreur3 <- renderText({
+  req(input$file)
+  err()[3]
+})
+
+
+output$erreur4 <- renderText({
+  req(input$file)
+  err()[4]
+})
+
+
+output$erreur5 <- renderText({
+  req(input$file)
+  err()[5]
+})
+
+
+output$erreur6 <- renderText({
+  req(input$file)
+  err()[6]
+})
+
+
+output$erreur7 <- renderText({
+  req(input$file)
+  err()[7]
+})
+
+
+output$erreur8 <- renderText({
+  req(input$file)
+  err()[8]
+})
+
+
+output$erreur9 <- renderText({
+  req(input$file)
+  err()[9]
+})
+
 
 
 
