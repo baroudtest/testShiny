@@ -200,10 +200,12 @@ output$homme <- renderText({
 # table des informations par espèces , abondance relative, nombre d'individus détecté
 # faudrait-il ajouer détection par mois ? 
 output$ab_rel <- renderTable({
-  aggregate <- aggregate(Individuals ~ Species+Site, data = data(), sum) 
+  nb <- aggregate(Individuals ~ Species+Site, data = data(), sum)
+  jours <- aggregate(Individuals ~ Species+Site+Date, data = data(), sum) # ! colonne site ou choix prealable ?
+  # utiliser length et unique
   tot <- sum(data()$Individuals)
   abondance <- aggregate$Individuals/tot
-  cbind(aggregate,abondance)
+  cbind(nb,abondance)
 })
 
 
