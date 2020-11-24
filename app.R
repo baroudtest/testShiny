@@ -272,8 +272,8 @@ output$downloadData <- downloadHandler(
     paste("Liste", ".csv", sep = "")
   },
   content = function(file) {
-    write.table(tableEsp(), file,quote = TRUE, sep = ";" ,row.names = FALSE, col.names = FALSE)
-  } # !!! fctne mais chiffres pas au bon format
+    write.table(tableEsp(), file,quote = TRUE, sep = ";",dec=",",row.names = FALSE, col.names = TRUE)
+  } 
 )
 
 #Sélection de l'espèce
