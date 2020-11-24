@@ -84,17 +84,30 @@ tabPanel("Cacher la Note d'utilisateur",
                       "Cette application Shiny est dédiée à l’analyse de données issues d’inventaire par pièges photographiques. Elle permet par une analyse automatisée de fournir quelques indicateurs qui caractérisent les inventaires de faune menés, la communauté et les espèces animale détectées le tout sous forme de tableaux, graphiques et cartes facilement téléchargeables.",
                       br(),
                       br(),
-                      
-                      
+                      "Vous trouverez ci-dessous un tableau récapitulatif de la communauté détectée durant votre/vos inventaire(s).",
                       br(),
-                      p("Indice de détection nocturne en pourcents"),
+                      tableOutput("richesse"),
+                      downloadButton("downloadData", "Download"))
+               ),
+             fluidRow(
+               column(width = 7,
+                      "La richesse spécifique peut également s’analyser en fonction de l’effort d’échantillonnage réalisé, 
+                      ce qui permet d’analyser l’exhaustivité de l’inventaire.",
+                      br(),
+                      plotOutput("accumul"),
+                      downloadButton("downloadGraph", "Download Graph"),
+                      br()),
+               column(width = 4,offset=1,
+                      h3("Indices :"),
+                      br(),
+                      h5("Pourcentage de détections nocturnes"),
                       textOutput("indnoc"),
                       br(),
+                      h5("Pourcentage de détections humaines"),
                       br(),
-                      p("Détection d'hommes en pourcents"),
-                      br(),
-                      textOutput("homme")
-               ))),
+                      textOutput("homme"))
+               )
+             ),
 ## Onglet "Analyse par espèce" ---------------------------------
     tabPanel("Analyse par espèce",
              fluidRow(
@@ -132,9 +145,11 @@ tabPanel("Cacher la Note d'utilisateur",
   
   ) #Close mainpanel
 
-)
+) #Close sidebarLayout
 
-)
+) #Close fluidPage
+
+
 
 ## Partie Server ------------------------------------------------ 
 # traitement de données, récupération des inputs, préparation des outputs--
@@ -246,7 +261,7 @@ output$homme <- renderText({
 
 # table des informations par espèces , abondance relative, nombre d'individus détecté
 # faudrait-il ajouer détection par mois ? 
-output$ab_rel <- renderTable({
+tableEsp <- reactive({
   nb <- aggregate(Individuals ~ Species+Site, data = data(), sum)
   jours <- aggregate(Individuals ~ Species+Site+Date, data = data(), sum) # ! colonne site ou choix prealable ?
   nj <- aggregate(Date ~ Species+Site, data = jours, length)
@@ -261,6 +276,10 @@ output$ab_rel <- renderTable({
   table
 })
 
+output$ab_rel <- renderTable({
+  tableEsp()
+})
+
 
 # Gérer le télchargement de la liste d'info par espèce
 output$downloadData <- downloadHandler(
@@ -268,8 +287,8 @@ output$downloadData <- downloadHandler(
     paste("Liste", ".csv", sep = "")
   },
   content = function(file) {
-    write.table(datasetInput(), file,quote = TRUE, sep = ";" ,row.names = FALSE, col.names = FALSE)
-  } # !!! datasetInput n'est plus a jour depuis les modifs de la variable pretraitee (je regarde à ca bientot)
+    write.table(tableEsp(), file,quote = TRUE, sep = ";",dec=",",row.names = FALSE, col.names = TRUE)
+  } 
 )
 
 #Sélection de l'espèce
