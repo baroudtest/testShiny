@@ -133,11 +133,17 @@ tabPanel("Cacher la Note d'utilisateur",
                                   (Relative Abundance index) . D’autres analyses sont possibles et des 
                                   ressources sont mobilisables dans la partie « Pour en savoir plus »",
                                   br(),
+                      selectizeInput(inputId = "selectSp",
+                                     label = "Sélection de l'espèce",
+                                     choices = "",
+                                     multiple = TRUE),
+                      br(),
+                      selectizeInput(inputId = "selectLoc",
+                                     label = "Sélection du site",
+                                     choices = "",
+                                     multiple = TRUE),
+                      br(),
                                   tableOutput("ab_rel"),
-                                  downloadButton("downloadData", "Download"),
-                                  selectizeInput("selectSp", 
-                                                 h3("choisissez votre espèce"),
-                                                 choices = ""), 
                       h3("Cacher/Dérouler le graphique"),
                       checkboxInput("affigraphique", "Afficher", value = TRUE),
                                   plotOutput("graph24h"),
@@ -379,13 +385,50 @@ output$homme <- renderText({
   d
 })
 
+observe({
+  updateSelectizeInput(
+    session,
+    inputId = "selectSp",
+    choices = c(data()$Species, "All")
+  )  
+})
+
+observe({
+  updateSelectizeInput(
+    session,
+    inputId = "selectLoc",
+    choices = c(data()$Site, "All")
+  )  
+})
+
 # table des informations par espèces , abondance relative, nombre d'individus détecté
 # faudrait-il ajouer détection par mois ? 
 tableEsp <- reactive({
+  req(input$selectSp, input$selectLoc)
+  ###
+  #Tentative de caser le ALL
+  if(input$selectSp == "All")
+    selesp <- as.data.frame(data()$Species)
+  else 
+    selesp <- as.data.frame(input$selectSp, 
+                            row.names = NULL)
+  colnames(selesp) <- "Species"
+  #Loc
+  if(input$selectLoc == "All")
+    selloc <- as.data.frame(data()$Site)
+  else
+    selloc <- as.data.frame(input$selectLoc,
+                            row.names = NULL)
+  colnames(selloc) <- "Site"
+  #bondocde
   nb <- aggregate(Individuals ~ Species+Site, data = data(), sum)
   jours <- aggregate(Individuals ~ Species+Site+Date, data = data(), sum) # ! colonne site ou choix prealable ?
   nj <- aggregate(Date ~ Species+Site, data = jours, length)
   table <- merge(nb,nj,by=c("Species","Site"))
+  if(input$selectLoc != "All")
+    table <- merge(table, selloc, by = "Site")
+  if(input$selectSp != "All")
+    table <- merge(table, selesp, by = "Species")
   table$Date <- table$Individuals/table$Date
   tot <- sum(data()$Individuals)
   ab <- (table$Individuals/tot)*100
@@ -410,15 +453,6 @@ output$downloadData <- downloadHandler(
     write.table(tableEsp(), file,quote = TRUE, sep = ";",dec=",",row.names = FALSE, col.names = TRUE)
   } 
 )
-
-#Sélection de l'espèce
-observe({
-  updateSelectizeInput(
-    session,
-    inputId = "selectSp",
-    choices = c(data()$Species, "All")
-  )  
-})
 
 # Création d'une cartographie des abondances relatives par espèce ------------------------------
 
