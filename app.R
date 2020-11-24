@@ -37,12 +37,10 @@ sidebarLayout(
    
 # Note utilisateur
 
-<<<<<<< HEAD
  tabsetPanel(
 tabPanel("Afficher la Note d'utilisateur",
          fluidRow(
-=======
->>>>>>> c6c424399f0b33110e56b292d961a43d93bab5ab
+           
   h4(div("Note importante concernant le format du jeu de données d'entrée :", style = "color:red")),
   p("1) Le jeu de donnée doit être au", strong("format de sortie .csv attribué par CameraBase, organisé comme suit"), "et doit comporter des colonnes ayant ces noms exacts, écrits dans cet ordre respectif :"),
   p(div(em("'Species'",
@@ -248,7 +246,7 @@ output$homme <- renderText({
 
 # table des informations par espèces , abondance relative, nombre d'individus détecté
 # faudrait-il ajouer détection par mois ? 
-output$ab_rel <- renderTable({
+tableEsp <- reactive({
   nb <- aggregate(Individuals ~ Species+Site, data = data(), sum)
   jours <- aggregate(Individuals ~ Species+Site+Date, data = data(), sum) # ! colonne site ou choix prealable ?
   nj <- aggregate(Date ~ Species+Site, data = jours, length)
@@ -263,6 +261,10 @@ output$ab_rel <- renderTable({
   table
 })
 
+output$ab_rel <- renderTable({
+  tableEsp()
+})
+
 
 # Gérer le télchargement de la liste d'info par espèce
 output$downloadData <- downloadHandler(
@@ -270,8 +272,8 @@ output$downloadData <- downloadHandler(
     paste("Liste", ".csv", sep = "")
   },
   content = function(file) {
-    write.table(datasetInput(), file,quote = TRUE, sep = ";" ,row.names = FALSE, col.names = FALSE)
-  } # !!! datasetInput n'est plus a jour depuis les modifs de la variable pretraitee (je regarde à ca bientot)
+    write.table(tableEsp(), file,quote = TRUE, sep = ";" ,row.names = FALSE, col.names = FALSE)
+  } # !!! fctne mais chiffres pas au bon format
 )
 
 #Sélection de l'espèce
