@@ -246,29 +246,14 @@ server <- function(input, output, session) {   #Objet "session" rajouté pour le
     datf
   })
   
-# indice d'occurence nocturne
-output$indnoc <- renderText({
-  req(input$file)
-  
-  ligne <- nrow(data())
-  b <- 0
-  #comptage des détection nocturne en observant chaque lingne de Data
-  for (i in 1:ligne) {
-    heure <- factor(data()$Hour[c(i)])
-    a <- lubridate::hms(as.character(heure))
-    c <- hour(a)
-    if (c[c(1)] > 18) { }
-    else  if (c[c(1)] < 6) {b <- b + data()$Individuals[c(i)]}
-    
-  }
-  # nombre de détections nocturne sur nombre de détections totales
-  d <- (b / ligne) *100
-  d
-})
 
 ###################################################
 # table des informations sur les communautés par site
 tableCom <- reactive({
+  #effort <- aggragate(Individuals ~ Site, data = data(), sum)
+  #ncam <- aggragate(Camera ~ Site, data = data(), length)
+  
+  
   nb <- aggregate(Individuals ~ Species+Site, data = data(), sum)
   jours <- aggregate(Individuals ~ Species+Site+Date, data = data(), sum) # ! colonne site ou choix prealable ?
   nj <- aggregate(Date ~ Species+Site, data = jours, length)
@@ -360,6 +345,26 @@ output$downloadAccumul <- downloadHandler(
   
 )
 ###################################################
+
+# indice d'occurence nocturne
+output$indnoc <- renderText({
+  req(input$file)
+  
+  ligne <- nrow(data())
+  b <- 0
+  #comptage des détection nocturne en observant chaque lingne de Data
+  for (i in 1:ligne) {
+    heure <- factor(data()$Hour[c(i)])
+    a <- lubridate::hms(as.character(heure))
+    c <- hour(a)
+    if (c[c(1)] > 18) { }
+    else  if (c[c(1)] < 6) {b <- b + data()$Individuals[c(i)]}
+    
+  }
+  # nombre de détections nocturne sur nombre de détections totales
+  d <- (b / ligne) *100
+  d
+})
 
 # Indice de présence humaine
 output$homme <- renderText({
