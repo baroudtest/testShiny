@@ -30,11 +30,11 @@ sidebarLayout(
     h5("(ou à uploader du serveur de la fac : soit fait par l'utilisateur, soit automatique)"),
     br(),
     br(),
-    fileInput("file",h2("Table de données")), # fileIput est l'outil permettant de lire un fichier de son choix à uploader
-    
+    fileInput("file",h2("Table de données")) # fileIput est l'outil permettant de lire un fichier de son choix à uploader
+    ,
     fileInput("infocam",h2("Informations de localisation des caméras")),
     numericInput("epsg",h3("Sélectionnez l'EPSG souhaité pour la cartographie"),4326),
-  
+    
     br(),
     div(textOutput("erreur1"), style = "color:red"),
     div(textOutput("erreur2"), style = "color:red"),
@@ -183,10 +183,10 @@ server <- function(input, output, session) {   #Objet "session" rajouté pour le
     
     req(input$infocam)
     infocamera <- read.csv(input$infocam$datapath,
-                    header = TRUE,
-                    sep = ";",
-                    quote = '"',
-                    colClasses = "character")
+                           header = TRUE,
+                           sep = ";",
+                           quote = '"',
+                           colClasses = "character")
     infocamera
   })
   
@@ -285,7 +285,7 @@ output$homme <- renderText({
 
 # table des informations par espèces , abondance relative, nombre d'individus détecté
 # faudrait-il ajouer détection par mois ? 
-output$ab_rel <- renderTable({
+tableEsp <- reactive({
   nb <- aggregate(Individuals ~ Species+Site, data = data(), sum)
   jours <- aggregate(Individuals ~ Species+Site+Date, data = data(), sum) # ! colonne site ou choix prealable ?
   nj <- aggregate(Date ~ Species+Site, data = jours, length)
@@ -300,6 +300,10 @@ output$ab_rel <- renderTable({
   table
 })
 
+output$ab_rel <- renderTable({
+  tableEsp()
+})
+
 
 # Gérer le télchargement de la liste d'info par espèce
 output$downloadData <- downloadHandler(
@@ -307,8 +311,8 @@ output$downloadData <- downloadHandler(
     paste("Liste", ".csv", sep = "")
   },
   content = function(file) {
-    write.table(datasetInput(), file,quote = TRUE, sep = ";" ,row.names = FALSE, col.names = FALSE)
-  } # !!! datasetInput n'est plus a jour depuis les modifs de la variable pretraitee (je regarde à ca bientot)
+    write.table(tableEsp(), file,quote = TRUE, sep = ";",dec=",",row.names = FALSE, col.names = TRUE)
+  } 
 )
 
 #Sélection de l'espèce
@@ -329,37 +333,38 @@ carte_ab_rel_esp <- reactive({
   
   # Création du jeu de données avec les coordonnées par jointure (objet data.frame)
   
-    coordocam <- coordcam() # On met le fichier d'entrée dans coordocam
-    
-    coordocam$name <- as.character(coordocam$name) # On s'assure que le nom de la camera est bien en character
-    coordocam1 = dplyr::select(coordocam,utm_x:utm_y,Camera = name) # On vire ce qui n'est pas utile, on ne garde que le nom de la camera (colonne name renommée Camera) et les coordonnées x et y utm
-    
-    coordocam1$Camera=as.character(coordocam$Camera)
-    aboncam$Camera=as.character(aboncam$Camera) # On transforme les valeurs des champs Camera en character afin de pouvoir effectuer la jointure
-    
-    aboncoordocam = left_join(aboncam,coordocam1, by = c("Camera" = "Camera")) #jointure gauche des coordonnées !
-    
-    
-    # Transformation en objet sf (d.f spatial), ajoute le champ geometry() qui contient les 2 coordonnées:
-    
-    aboncoordocam1 <- st_as_sf(aboncoordocam,coords=c("utm_x","utm_y"),crs=input$epsg)  
-    
-    # Manip de sélection de l'espèce :
-
-x <- as.character(input$selectSp)
-   aboncoordocam2 <- aboncoordocam1
-# si "All" est encodé, graphique de toute les epsèces, si le nome d'une espèe est encodé, le prend en compte
-if (input$selectSp != "All")
-  aboncoordocam2 <- aboncoordocam1[aboncoordocam1$Species == x,]
-   
-plot(aboncoordocam2$geometry())
-
+  coordocam <- coordcam() # On met le fichier d'entrée dans coordocam
+  
+  coordocam$name <- as.character(coordocam$name) # On s'assure que le nom de la camera est bien en character
+  coordocam1 = dplyr::select(coordocam,utm_x:utm_y,Camera = name) # On vire ce qui n'est pas utile, on ne garde que le nom de la camera (colonne name renommée Camera) et les coordonnées x et y utm
+  
+  coordocam1$Camera=as.character(coordocam$Camera)
+  aboncam$Camera=as.character(aboncam$Camera) # On transforme les valeurs des champs Camera en character afin de pouvoir effectuer la jointure
+  
+  aboncoordocam = left_join(aboncam,coordocam1, by = c("Camera" = "Camera")) #jointure gauche des coordonnées !
+  
+  
+  # Transformation en objet sf (d.f spatial), ajoute le champ geometry() qui contient les 2 coordonnées:
+  
+  aboncoordocam1 <- st_as_sf(aboncoordocam,coords=c("utm_x","utm_y"),crs=input$epsg)  
+  
+  # Manip de sélection de l'espèce :
+  
+  x <- as.character(input$selectSp)
+  aboncoordocam2 <- aboncoordocam1
+  # si "All" est encodé, graphique de toute les epsèces, si le nome d'une espèe est encodé, le prend en compte
+  if (input$selectSp != "All")
+    aboncoordocam2 <- aboncoordocam1[aboncoordocam1$Species == x,]
+  
+  plot(aboncoordocam2$geometry())
+  
 })
 
 # Renerplot des données
 output$carte_ab_esp <- renderPlot({carte_ab_rel_esp()}) 
 
-# Création du graphique d'activité en 24h en réactive de façon à pouvoir le télécharger ----------------------
+
+# Création du graphique d'activité en 24h en réactive de façon à pouvoir le télécharger
 
   graph24 <- reactive ({
 # récupérer l'espèce encodée 
