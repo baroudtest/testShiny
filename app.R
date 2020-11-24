@@ -1,8 +1,18 @@
 library(shiny)
 library(lubridate)
 library(circular)
-library(lubridate)
 library(ggplot2)
+library(doBy)
+library(sf)
+library(dplyr)
+
+#install.packages("ggplot2")
+#install.packages("circular")
+#install.packages("shiny")
+#install.packages("lubridate")
+#install.packages("doby")
+#install.packages("sf")
+#install.packages("dplyr")
 
 
 ## Agencement fluipage sur la page, outils d'interactions (uploader un fichier, case à cocher, sliders,...)----
@@ -22,6 +32,9 @@ sidebarLayout(
     br(),
     fileInput("file",h2("Table de données")) # fileIput est l'outil permettant de lire un fichier de son choix à uploader
     ,
+    fileInput("infocam",h2("Informations de localisation des caméras")),
+    numericInput("epsg",h3("Sélectionnez l'EPSG souhaité pour la cartographie"),4326),
+    
     br(),
     div(textOutput("erreur1"), style = "color:red"),
     div(textOutput("erreur2"), style = "color:red"),
@@ -136,7 +149,7 @@ tabPanel("Cacher la Note d'utilisateur",
     tabPanel("Cartes",
              fluidRow(
                column(width = 12,
-                      h1("HI!")
+                      plotOutput("carte_ab_esp")
     )))
 
 ## Fermeture des onglets ----------------------------------------
@@ -164,6 +177,17 @@ server <- function(input, output, session) {   #Objet "session" rajouté pour le
                 quote = '"',
                 colClasses = "character")
     esp
+  })
+  
+  coordcam <- reactive({
+    
+    req(input$infocam)
+    infocamera <- read.csv(input$infocam$datapath,
+                           header = TRUE,
+                           sep = ";",
+                           quote = '"',
+                           colClasses = "character")
+    infocamera
   })
   
   data <- reactive({
@@ -299,6 +323,46 @@ observe({
     choices = c(data()$Species, "All")
   )  
 })
+
+# Création d'une cartographie des abondances relatives par espèce ------------------------------
+
+carte_ab_rel_esp <- reactive({ 
+  
+  # Création du jeu de données aggrégées sans coordonnées : 
+  aboncam <- aggregate(Individuals ~ Species+Camera, data = data(), sum)
+  
+  # Création du jeu de données avec les coordonnées par jointure (objet data.frame)
+  
+  coordocam <- coordcam() # On met le fichier d'entrée dans coordocam
+  
+  coordocam$name <- as.character(coordocam$name) # On s'assure que le nom de la camera est bien en character
+  coordocam1 = dplyr::select(coordocam,utm_x:utm_y,Camera = name) # On vire ce qui n'est pas utile, on ne garde que le nom de la camera (colonne name renommée Camera) et les coordonnées x et y utm
+  
+  coordocam1$Camera=as.character(coordocam$Camera)
+  aboncam$Camera=as.character(aboncam$Camera) # On transforme les valeurs des champs Camera en character afin de pouvoir effectuer la jointure
+  
+  aboncoordocam = left_join(aboncam,coordocam1, by = c("Camera" = "Camera")) #jointure gauche des coordonnées !
+  
+  
+  # Transformation en objet sf (d.f spatial), ajoute le champ geometry() qui contient les 2 coordonnées:
+  
+  aboncoordocam1 <- st_as_sf(aboncoordocam,coords=c("utm_x","utm_y"),crs=input$epsg)  
+  
+  # Manip de sélection de l'espèce :
+  
+  x <- as.character(input$selectSp)
+  aboncoordocam2 <- aboncoordocam1
+  # si "All" est encodé, graphique de toute les epsèces, si le nome d'une espèe est encodé, le prend en compte
+  if (input$selectSp != "All")
+    aboncoordocam2 <- aboncoordocam1[aboncoordocam1$Species == x,]
+  
+  plot(aboncoordocam2$geometry())
+  
+})
+
+# Renerplot des données
+output$carte_ab_esp <- renderPlot({carte_ab_rel_esp()}) 
+
 
 # Création du graphique d'activité en 24h en réactive de façon à pouvoir le télécharger
 
