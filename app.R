@@ -100,7 +100,8 @@ tabPanel("Cacher la Note d'utilisateur",
                       "Vous trouverez ci-dessous un tableau récapitulatif de la communauté détectée durant votre/vos inventaire(s).",
                       br(),
                       tableOutput("richesse"),
-                      downloadButton("downloadData", "Download"))
+                      downloadButton("downloadCom", "Download")
+                      )
                ),
              fluidRow(
                column(width = 7,
@@ -108,7 +109,7 @@ tabPanel("Cacher la Note d'utilisateur",
                       ce qui permet d’analyser l’exhaustivité de l’inventaire.",
                       br(),
                       plotOutput("accumul"),
-                      downloadButton("downloadGraph", "Download Graph"),
+                      downloadButton("downloadAccumul", "Download Graph"),
                       br()),
                column(width = 4,offset=1,
                       h3("Indices :"),
@@ -264,6 +265,101 @@ output$indnoc <- renderText({
   d <- (b / ligne) *100
   d
 })
+
+###################################################
+# table des informations sur les communautés par site
+tableCom <- reactive({
+  nb <- aggregate(Individuals ~ Species+Site, data = data(), sum)
+  jours <- aggregate(Individuals ~ Species+Site+Date, data = data(), sum) # ! colonne site ou choix prealable ?
+  nj <- aggregate(Date ~ Species+Site, data = jours, length)
+  table <- merge(nb,nj,by=c("Species","Site"))
+  table$Date <- table$Individuals/table$Date
+  tot <- sum(data()$Individuals)
+  ab <- (table$Individuals/tot)*100
+  table <- cbind(table,ab)
+  table <- merge(table,IUCN(),by="Species",all.x=T)
+  names(table) <- c("Espèce","Site","Nombre d'individus","Taux de détection (nb par jour)",
+                    "Abondance relative (en %)","Statut IUCN")
+  table
+})
+
+output$richesse <- renderTable({
+  tableCom()
+})
+
+
+# Gérer le télchargement de la liste d'info par espèce
+output$downloadCom <- downloadHandler(
+  filename = function() {
+    paste("Liste Com", ".csv", sep = "")
+  },
+  content = function(file) {
+    write.table(tableCom(), file,quote = TRUE, sep = ";",dec=",",row.names = FALSE, col.names = TRUE)
+  } 
+)
+
+# Création du graphique d'activité en 24h en réactive de façon à pouvoir le télécharger
+
+accumul <- reactive ({
+  # récupérer l'espèce encodée 
+  
+  x <- as.character(input$selectSp)
+  
+  # récupérer le dataframe nettoyé
+  df <- data()
+  # si "All" est encodé, graphique de toute les epsèces, si le nome d'une espèe est encodé, le prend en compte
+  if (input$selectSp != "All")
+    df <- df[df$Species == x,]
+  
+  # récupéré les heures concernées de l'espèce choisie
+  
+  heurea <- df$Hour
+  a <- lubridate ::hms(as.character(heurea))
+  
+  hour_of_event <- hour(a)
+  
+  eventdata <- data.frame(datetime = df$Date, eventhour = hour_of_event)
+  
+  # désignation de la période nocturne (entre 6h et 18h)
+  eventdata$Day <- eventdata$eventhour %in% seq(6, 18)
+  
+  # création du graphique, mise en couleur du "jour", nombre de 0 à 24h
+  frete<- ggplot(eventdata, aes(x = eventhour, fill = Day)) + geom_histogram(breaks = seq(0, 
+                                                                                          24)) + coord_polar(start = 0) + theme_minimal() + 
+    scale_fill_brewer() + ylab("Nombre de détection") + ggtitle(paste(input$selectSp,"Répartition des détection par heure", sep=" ")) + 
+    scale_x_continuous("", limits = c(0, 24), breaks = seq(0, 24), labels = seq(0, 
+                                                                                24))
+  
+  frete
+})
+
+# Encodage du graphique réactif en output de manière à l'afficher
+output$accumul <- renderPlot({
+  req(input$affigraphique == TRUE)
+  req(input$file)
+  accumul()
+})
+
+# réception de l'spèce choisie en réactif
+
+chosenSp <- reactive ({
+  
+  Input$selectSp
+})
+
+# gérer le téléchargement du graphique circulaire
+output$downloadAccumul <- downloadHandler(
+  # filename pour définir le nom par défaut du fichier produit, Content pour choisir le graph dans l'image
+  filename = function() {paste(input$selectSp,"accumul", '.png', sep='') },
+  content = function(file) {
+    
+    png(file)
+    print(accumul())
+    dev.off() 
+  }
+  
+)
+###################################################
 
 # Indice de présence humaine
 output$homme <- renderText({
