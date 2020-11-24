@@ -84,17 +84,30 @@ tabPanel("Cacher la Note d'utilisateur",
                       "Cette application Shiny est dédiée à l’analyse de données issues d’inventaire par pièges photographiques. Elle permet par une analyse automatisée de fournir quelques indicateurs qui caractérisent les inventaires de faune menés, la communauté et les espèces animale détectées le tout sous forme de tableaux, graphiques et cartes facilement téléchargeables.",
                       br(),
                       br(),
-                      
-                      
+                      "Vous trouverez ci-dessous un tableau récapitulatif de la communauté détectée durant votre/vos inventaire(s).",
                       br(),
-                      p("Indice de détection nocturne en pourcents"),
+                      tableOutput("richesse"),
+                      downloadButton("downloadData", "Download"))
+               ),
+             fluidRow(
+               column(width = 7,
+                      "La richesse spécifique peut également s’analyser en fonction de l’effort d’échantillonnage réalisé, 
+                      ce qui permet d’analyser l’exhaustivité de l’inventaire.",
+                      br(),
+                      plotOutput("accumul"),
+                      downloadButton("downloadGraph", "Download Graph"),
+                      br()),
+               column(width = 4,offset=1,
+                      h3("Indices :"),
+                      br(),
+                      h5("Pourcentage de détections nocturnes"),
                       textOutput("indnoc"),
                       br(),
+                      h5("Pourcentage de détections humaines"),
                       br(),
-                      p("Détection d'hommes en pourcents"),
-                      br(),
-                      textOutput("homme")
-               ))),
+                      textOutput("homme"))
+               )
+             ),
 ## Onglet "Analyse par espèce" ---------------------------------
     tabPanel("Analyse par espèce",
              fluidRow(
@@ -132,9 +145,11 @@ tabPanel("Cacher la Note d'utilisateur",
   
   ) #Close mainpanel
 
-)
+) #Close sidebarLayout
 
-)
+) #Close fluidPage
+
+
 
 ## Partie Server ------------------------------------------------ 
 # traitement de données, récupération des inputs, préparation des outputs--
