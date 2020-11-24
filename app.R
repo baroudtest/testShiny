@@ -37,12 +37,10 @@ sidebarLayout(
    
 # Note utilisateur
 
-<<<<<<< HEAD
  tabsetPanel(
 tabPanel("Afficher la Note d'utilisateur",
          fluidRow(
-=======
->>>>>>> c6c424399f0b33110e56b292d961a43d93bab5ab
+
   h4(div("Note importante concernant le format du jeu de données d'entrée :", style = "color:red")),
   p("1) Le jeu de donnée doit être au", strong("format de sortie .csv attribué par CameraBase, organisé comme suit"), "et doit comporter des colonnes ayant ces noms exacts, écrits dans cet ordre respectif :"),
   p(div(em("'Species'",
