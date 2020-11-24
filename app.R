@@ -270,7 +270,7 @@ output$homme <- renderText({
 
 # table des informations par espèces , abondance relative, nombre d'individus détecté
 # faudrait-il ajouer détection par mois ? 
-tableEsp <- reactive({
+output$ab_rel <- renderTable({
   nb <- aggregate(Individuals ~ Species+Site, data = data(), sum)
   jours <- aggregate(Individuals ~ Species+Site+Date, data = data(), sum) # ! colonne site ou choix prealable ?
   nj <- aggregate(Date ~ Species+Site, data = jours, length)
@@ -285,10 +285,6 @@ tableEsp <- reactive({
   table
 })
 
-output$ab_rel <- renderTable({
-  tableEsp()
-})
-
 
 # Gérer le télchargement de la liste d'info par espèce
 output$downloadData <- downloadHandler(
@@ -296,8 +292,8 @@ output$downloadData <- downloadHandler(
     paste("Liste", ".csv", sep = "")
   },
   content = function(file) {
-    write.table(tableEsp(), file,quote = TRUE, sep = ";",dec=",",row.names = FALSE, col.names = TRUE)
-  } 
+    write.table(datasetInput(), file,quote = TRUE, sep = ";" ,row.names = FALSE, col.names = FALSE)
+  } # !!! datasetInput n'est plus a jour depuis les modifs de la variable pretraitee (je regarde à ca bientot)
 )
 
 #Sélection de l'espèce
@@ -321,7 +317,7 @@ carte_ab_rel_esp <- reactive({
     coordocam <- coordcam() # On met le fichier d'entrée dans coordocam
     
     coordocam$name <- as.character(coordocam$name) # On s'assure que le nom de la camera est bien en character
-    coordocam1 = dplyr::select(coordocam,utm_x:utm_y,Camera = name) # On vire ce qui n'est pas utile, on ne garde que le nom de la camera et les coordonnées x et y utm
+    coordocam1 = dplyr::select(coordocam,utm_x:utm_y,Camera = name) # On vire ce qui n'est pas utile, on ne garde que le nom de la camera (colonne name renommée Camera) et les coordonnées x et y utm
     
     coordocam1$Camera=as.character(coordocam$Camera)
     aboncam$Camera=as.character(aboncam$Camera) # On transforme les valeurs des champs Camera en character afin de pouvoir effectuer la jointure
