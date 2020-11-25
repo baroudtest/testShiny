@@ -5,6 +5,8 @@ library(ggplot2)
 library(doBy)
 library(sf)
 library(dplyr)
+library(reshape2)
+library(vegan)
 
 #install.packages("ggplot2")
 #install.packages("circular")
@@ -13,6 +15,8 @@ library(dplyr)
 #install.packages("doby")
 #install.packages("sf")
 #install.packages("dplyr")
+#install.packages("reshape2")
+#install.packages("vegan")
 
 
 ## Agencement fluipage sur la page, outils d'interactions (uploader un fichier, case à cocher, sliders,...)----
@@ -257,7 +261,6 @@ server <- function(input, output, session) {   #Objet "session" rajouté pour le
   })
   
 
-###################################################
 # table des informations sur les communautés par site
 tableCom <- reactive({
   effort <- aggregate(Individuals ~ Site, data = data(), sum)
@@ -289,8 +292,7 @@ output$richesse <- renderTable({
   tableCom()
 })
 
-
-# Gérer le télchargement de la liste d'info par espèce
+# Gérer le télchargement de la liste d'info par site
 output$downloadCom <- downloadHandler(
   filename = function() {
     paste("Liste Com", ".csv", sep = "")
@@ -300,59 +302,54 @@ output$downloadCom <- downloadHandler(
   } 
 )
 
-# Création du graphique d'activité en 24h en réactive de façon à pouvoir le télécharger
 
+# Création de la courbe d'accumulation en réactive de façon à pouvoir la télécharger
+##PLUSIEURS SITES PAR GRAPHIQUE
 accumul <- reactive ({
-  # récupérer l'espèce encodée 
   
-  x <- as.character(input$selectSp)
+  matriceSite <- aggregate(Individuals ~ Date+Site+Species,data=datf,sum)
+  matriceSite$Date <- dmy(matriceSite$Date)
+  matriceSite <- matriceSite[order(matriceSite$Date),]
   
-  # récupérer le dataframe nettoyé
-  df <- data()
-  # si "All" est encodé, graphique de toute les epsèces, si le nome d'une espèe est encodé, le prend en compte
-  if (input$selectSp != "All")
-    df <- df[df$Species == x,]
+  sites <- aggregate(Individuals ~ Site, data = datf, sum)
+  sites <- sites$Site
+  nSites <- length(sites)
   
-  # récupéré les heures concernées de l'espèce choisie
+  par(mfrow = c(1,1))
+  matrices_sep <- list()
+  accumSite <- list()
+  for (i in 1:nSites) {
+    matrices_sep[[i]] <- subset(matriceSite, substr(matriceSite$Site,1,3)==substr(sites[i],1,3))
+    matrices_sep[[i]] <- matrices_sep[[i]][,-2]
+    matrices_sep[[i]] <- dcast(matrices_sep[[i]],Date~Species,fill=0)
+    rownames(matrices_sep[[i]]) <- matrices_sep[[i]][,1]
+    matrices_sep[[i]] <- matrices_sep[[i]][,-1]
+    accumSite[[i]] <- specaccum(matrices_sep[[i]])
+  }
   
-  heurea <- df$Hour
-  a <- lubridate ::hms(as.character(heurea))
-  
-  hour_of_event <- hour(a)
-  
-  eventdata <- data.frame(datetime = df$Date, eventhour = hour_of_event)
-  
-  # désignation de la période nocturne (entre 6h et 18h)
-  eventdata$Day <- eventdata$eventhour %in% seq(6, 18)
-  
-  # création du graphique, mise en couleur du "jour", nombre de 0 à 24h
-  frete<- ggplot(eventdata, aes(x = eventhour, fill = Day)) + geom_histogram(breaks = seq(0, 
-                                                                                          24)) + coord_polar(start = 0) + theme_minimal() + 
-    scale_fill_brewer() + ylab("Nombre de détection") + ggtitle(paste(input$selectSp,"Répartition des détection par heure", sep=" ")) + 
-    scale_x_continuous("", limits = c(0, 24), breaks = seq(0, 24), labels = seq(0, 
-                                                                                24))
-  
-  frete
+  rich <- aggregate(Individuals ~ Site+Species, data = datf, sum)
+  rich <- aggregate(Individuals ~ Site, data = rich, length)
+  m <- which(rich$Individuals==max(rich$Individuals))
+  plot(accumSite[[m]],xlab = "Nb de jours d'inventaire cumulés",ylab = "Nombre d'espèces",
+       ci=0,col=2,key.pos=4) #ajouter legende : couleurs selon les sites
+  title("Courbes d'accumulation")
+  legend(x="bottomright",legend=c(sites),col=2:(nSites+1),lty=1:1,lwd=1:1,cex=0.8)
+  for (i in 1:nSites) {
+    plot(accumSite[[i]],xlab = "Nb de jours d'inventaire cumulés",ylab = "Nombre d'espèces",
+         ci=0,add=T,col=i+1) #ajouter legende : couleurs selon les sites
+  }
 })
 
 # Encodage du graphique réactif en output de manière à l'afficher
 output$accumul <- renderPlot({
-  req(input$affigraphique == TRUE)
   req(input$file)
   accumul()
-})
-
-# réception de l'spèce choisie en réactif
-
-chosenSp <- reactive ({
-  
-  Input$selectSp
 })
 
 # gérer le téléchargement du graphique circulaire
 output$downloadAccumul <- downloadHandler(
   # filename pour définir le nom par défaut du fichier produit, Content pour choisir le graph dans l'image
-  filename = function() {paste(input$selectSp,"accumul", '.png', sep='') },
+  filename = function() {paste("accumul", '.png', sep='') }, #ou //input$selectSp si choix avec tot
   content = function(file) {
     
     png(file)
@@ -361,7 +358,7 @@ output$downloadAccumul <- downloadHandler(
   }
   
 )
-###################################################
+
 
 # indice d'occurence nocturne
 output$indnoc <- renderText({
