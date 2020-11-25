@@ -1,3 +1,17 @@
+library(shiny)
+#install.packages("shiny")
+library(lubridate)
+#install.packages("lubridate")
+library(circular)
+#install.packages("circular")
+library(ggplot2)
+#install.packages("ggplot2")
+library(cowplot)
+#install.packages("cowplot")
+library(doBy)
+#install.packages("doby")
+library(sf)
+#install.packages("sf")
 library(dplyr)
 #install.packages("dplyr")
 library(ggspatial)
@@ -25,7 +39,6 @@ library(reshape2)
 library(vegan)
 #install.packages("vegan")
 
-
 ## Agencement fluipage sur la page, outils d'interactions (uploader un fichier, case à cocher, sliders,...)----
 ui <- fluidPage(
 ## Contrôle sidebar -------------------------------------------
@@ -44,7 +57,7 @@ sidebarLayout(
     fileInput("file",h2("Table de données")) # fileIput est l'outil permettant de lire un fichier de son choix à uploader
     ,
     fileInput("infocam",h2("Informations de localisation des caméras")),
-    fileInput("shp",h3("Ajouter un polygone de délimitation")),
+    fileInput("shp",h3("Ajouter un polygone de délimitation de zones")),
     numericInput("epsg",h3("Sélectionnez l'EPSG souhaité pour la cartographie"),32632),
     
     br(),
@@ -200,6 +213,11 @@ server <- function(input, output, session) {   #Objet "session" rajouté pour le
                 quote = '"',
                 colClasses = "character")
     esp
+  })
+  
+  
+  SHP <- reactive({
+    shape <- com=st_read("shp",stringsAsFactors = F)
   })
   
   coordcam <- reactive({
@@ -507,7 +525,7 @@ carte_ab_rel_esp <- reactive({
   if (input$selectSp != "All")
     aboncoordocam2 <- aboncoordocam1[aboncoordocam1$Species == x,]
   
-  plot(aboncoordocam2$geometry())
+  plot(aboncoordocam2$geometry)
   
 })
 
