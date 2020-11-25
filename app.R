@@ -100,7 +100,9 @@ tabPanel("Cacher la Note d'utilisateur",
                       "Vous trouverez ci-dessous un tableau récapitulatif de la communauté détectée durant votre/vos inventaire(s).",
                       br(),
                       tableOutput("richesse"),
-                      downloadButton("downloadCom", "Download")
+                      downloadButton("downloadCom", "Download"),
+                      br(),
+                      br()
                       )
                ),
              fluidRow(
@@ -258,22 +260,29 @@ server <- function(input, output, session) {   #Objet "session" rajouté pour le
 ###################################################
 # table des informations sur les communautés par site
 tableCom <- reactive({
-  #effort <- aggragate(Individuals ~ Site, data = data(), sum)
-  #ncam <- aggragate(Camera ~ Site, data = data(), length)
-  
-  
-  nb <- aggregate(Individuals ~ Species+Site, data = data(), sum)
-  jours <- aggregate(Individuals ~ Species+Site+Date, data = data(), sum) # ! colonne site ou choix prealable ?
-  nj <- aggregate(Date ~ Species+Site, data = jours, length)
-  table <- merge(nb,nj,by=c("Species","Site"))
-  table$Date <- table$Individuals/table$Date
-  tot <- sum(data()$Individuals)
-  ab <- (table$Individuals/tot)*100
-  table <- cbind(table,ab)
-  table <- merge(table,IUCN(),by="Species",all.x=T)
-  names(table) <- c("Espèce","Site","Nombre d'individus","Taux de détection (nb par jour)",
-                    "Abondance relative (en %)","Statut IUCN")
-  table
+  effort <- aggregate(Individuals ~ Site, data = data(), sum)
+  ncam <- aggregate(Individuals ~ Site+Camera, data = data(), sum)
+  ncam <- aggregate(Individuals ~ Site, data = ncam, length)
+  tab1 <- merge(ncam,effort,by=c("Site","Site"),all=T)
+  rich <- aggregate(Individuals ~ Site+Species, data = data(), sum)
+  rich <- aggregate(Individuals ~ Site, data = rich, length)
+  tab1 <- merge(tab1,rich,by=c("Site","Site"),all=T)
+  datEN <- merge(data(),IUCN(),by="Species",all.x=T)
+  datEN <- subset(datEN,datEN$IUCN=="EN"|datEN$IUCN=="CR")
+  EN <- aggregate(Individuals ~ Site+Species, data = datEN, sum)
+  EN <- aggregate(Individuals ~ Site, data = EN, length)
+  tab1 <- merge(tab1,EN,by=c("Site","Site"),all=T)
+  names(tab1) <- c("Site","Nombre de caméras","Effort d'inventaire",
+                   "Richesse spécifique","Nombre d'espèces menacées")
+  n <- length(tab1$Site)
+  tab1[n+1,1] <- "TOTAL"
+  tab1[n+1,2] <- sum(tab1[-(n+1),2])
+  tab1[n+1,3] <- sum(tab1[-(n+1),3])
+  richTot <- aggregate(Individuals ~ Species, data = data(), length)
+  tab1[n+1,4] <- nrow(richTot)
+  ENTot <- aggregate(Individuals ~ Species, data = datEN, length)
+  tab1[n+1,5] <- nrow(ENTot)
+  tab1
 })
 
 output$richesse <- renderTable({
