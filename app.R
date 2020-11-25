@@ -185,7 +185,8 @@ tabPanel("Cacher la Note d'utilisateur",
     tabPanel("Cartes",
              fluidRow(
                column(width = 12,
-                      plotOutput("carte_ab_esp")
+                      plotOutput("carte_ab_esp"),
+                      plotOutput("test_shp")
     )))
 
 ## Fermeture des onglets ----------------------------------------
@@ -217,7 +218,7 @@ server <- function(input, output, session) {   #Objet "session" rajouté pour le
   
   
   SHP <- reactive({
-    shape <- com=st_read("shp",stringsAsFactors = F)
+    shape <- com=st_read(input$shp$datapath,stringsAsFactors = F)
   })
   
   coordcam <- reactive({
@@ -513,7 +514,7 @@ carte_ab_rel_esp <- reactive({
   aboncoordocam = left_join(aboncam,coordocam1, by = c("Camera" = "Camera")) #jointure gauche des coordonnées !
   
   
-  # Transformation en objet sf (d.f spatial), ajoute le champ geometry() qui contient les 2 coordonnées:
+  # Transformation en objet sf (d.f spatial), ajoute le champ geometry qui contient les 2 coordonnées:
   
   aboncoordocam1 <- st_as_sf(aboncoordocam,coords=c("utm_x","utm_y"),crs=input$epsg)  
   
@@ -525,12 +526,36 @@ carte_ab_rel_esp <- reactive({
   if (input$selectSp != "All")
     aboncoordocam2 <- aboncoordocam1[aboncoordocam1$Species == x,]
   
-  plot(aboncoordocam2$geometry)
+  plot(aboncoordocam2$geometry) })
   
-})
+ coefs <- reative({
+   emmprise <- st_bbox(SHP())
+   xmin <- emmprise[1]
+   ymin <- emmprise[2]
+   xmax <- emmprise[3]
+   ymax <- emmprise[4]
+   
+   # Coeffs à affecter sur les coordonnées pour générer une emprise élargie
+   diffx <- abs(abs(xmax)-abs(xmin))
+   diffy <- abs(abs(ymax)-abs(ymin))
+   diffx
+   diffy
+   coefx <- as.numeric(diffx/7)
+   coefy <- as.numeric(diffy/7)
+   coefx
+   coefy
+     })
+ 
+ carte1 <- reactive({ 
+   ggplot() +
+     geom_sf(data=SHP()) +
+     coord_sf(crs = st_crs(input$epsg),xlim=c(xmin-coefx,xmax+coefx),ylim=c(ymin-coefy,ymax+coefy), expand = FALSE)
+     })
+ 
 
 # Renerplot des données
 output$carte_ab_esp <- renderPlot({carte_ab_rel_esp()}) 
+output$test_shp <- renderPlot({carte1()})
 
 
 # Création du graphique d'activité en 24h en réactive de façon à pouvoir le télécharger
