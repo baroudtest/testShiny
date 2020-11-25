@@ -307,11 +307,11 @@ output$downloadCom <- downloadHandler(
 ##PLUSIEURS SITES PAR GRAPHIQUE
 accumul <- reactive ({
   
-  matriceSite <- aggregate(Individuals ~ Date+Site+Species,data=datf,sum)
+  matriceSite <- aggregate(Individuals ~ Date+Site+Species,data=data(),sum)
   matriceSite$Date <- dmy(matriceSite$Date)
   matriceSite <- matriceSite[order(matriceSite$Date),]
   
-  sites <- aggregate(Individuals ~ Site, data = datf, sum)
+  sites <- aggregate(Individuals ~ Site, data = data(), sum)
   sites <- sites$Site
   nSites <- length(sites)
   
@@ -327,7 +327,7 @@ accumul <- reactive ({
     accumSite[[i]] <- specaccum(matrices_sep[[i]])
   }
   
-  rich <- aggregate(Individuals ~ Site+Species, data = datf, sum)
+  rich <- aggregate(Individuals ~ Site+Species, data = data(), sum)
   rich <- aggregate(Individuals ~ Site, data = rich, length)
   m <- which(rich$Individuals==max(rich$Individuals))
   plot(accumSite[[m]],xlab = "Nb de jours d'inventaire cumulés",ylab = "Nombre d'espèces",
