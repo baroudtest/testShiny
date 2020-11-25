@@ -44,7 +44,7 @@ sidebarLayout(
     fileInput("file",h2("Table de données")) # fileIput est l'outil permettant de lire un fichier de son choix à uploader
     ,
     fileInput("infocam",h2("Informations de localisation des caméras")),
-    numericInput("epsg",h3("Sélectionnez l'EPSG souhaité pour la cartographie"),4326),
+    numericInput("epsg",h3("Sélectionnez l'EPSG souhaité pour la cartographie"),32632),
     
     br(),
     div(textOutput("erreur1"), style = "color:red"),
