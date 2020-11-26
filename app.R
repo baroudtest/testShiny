@@ -45,7 +45,7 @@ ui <- fluidPage(
 sidebarLayout(
   sidebarPanel(
     
-# File input 
+# File inputs Sidebar------------------------------------------------
     fileInput("status",h2("Table IUCN")) # fileIput est l'outil permettant de lire un fichier de son choix à uploader
     ,
     
@@ -149,7 +149,7 @@ tabPanel("Cacher la Note d'utilisateur",
                       textOutput("homme"))
                )
              ),
-## Onglet "Analyse par espèce" ---------------------------------
+## Onglet "Analyse par espèce" (sélection de l'espèce et du site) ---------------------------------
     tabPanel("Analyse par espèce",
              fluidRow(
                column(width = 12,
@@ -202,8 +202,11 @@ tabPanel("Cacher la Note d'utilisateur",
 
 
 ## Partie Server ------------------------------------------------ 
-# traitement de données, récupération des inputs, préparation des outputs--
+# traitement de données, récupération des inputs, préparation des outputs
+
 server <- function(input, output, session) {   #Objet "session" rajouté pour le bon fonctionnement de l'observe
+ 
+# Lecture et préparation des données issues des inputs : ---------------------------------
   
   IUCN <- reactive({
     
@@ -218,7 +221,8 @@ server <- function(input, output, session) {   #Objet "session" rajouté pour le
   
   
   SHP <- reactive({
-    shape <- com=st_read(input$shp$datapath,stringsAsFactors = F)
+      # Trouver une solution : st_read est pas supporté par shiny, il plante et dit que le fichier est corrompu...
+    
   })
   
   coordcam <- reactive({
@@ -287,8 +291,8 @@ server <- function(input, output, session) {   #Objet "session" rajouté pour le
     datf
   })
   
-
-# table des informations sur les communautés par site
+# Traitement des données de la partie communauté --------------------------------------
+# table des informations sur les communautés par site 
 tableCom <- reactive({
   effort <- aggregate(Individuals ~ Site, data = data(), sum)
   ncam <- aggregate(Individuals ~ Site+Camera, data = data(), sum)
@@ -319,7 +323,7 @@ output$richesse <- renderTable({
   tableCom()
 })
 
-# Gérer le télchargement de la liste d'info par site
+# Gérer le téléchargement de la liste d'info par site
 output$downloadCom <- downloadHandler(
   filename = function() {
     paste("Liste Com", ".csv", sep = "")
@@ -373,7 +377,7 @@ output$accumul <- renderPlot({
   accumul()
 })
 
-# gérer le téléchargement du graphique circulaire
+# gérer le téléchargement du graphique d'accumulation 
 output$downloadAccumul <- downloadHandler(
   # filename pour définir le nom par défaut du fichier produit, Content pour choisir le graph dans l'image
   filename = function() {paste("accumul", '.png', sep='') }, #ou //input$selectSp si choix avec tot
@@ -441,6 +445,7 @@ observe({
   )  
 })
 
+# Traitement des données des espèces : ----------------------------------------------
 # table des informations par espèces , abondance relative, nombre d'individus détecté
 # faudrait-il ajouer détection par mois ? 
 tableEsp <- reactive({
@@ -496,13 +501,19 @@ output$downloadData <- downloadHandler(
 
 # Création d'une cartographie des abondances relatives par espèce ------------------------------
 
-carte_ab_rel_esp <- reactive({ 
+# Traitement et préparation des données utiles aux cartes 
+
+req(input$epsg)
+EPSG <- reactive({as.numeric(input$epsg)}) # On récupère l'epsg de manière réactive.
+
+données_cartes_ab_rel_esp <- reactive({ 
   
+  req(data())
   # Création du jeu de données aggrégées sans coordonnées : 
   aboncam <- aggregate(Individuals ~ Species+Camera, data = data(), sum)
   
   # Création du jeu de données avec les coordonnées par jointure (objet data.frame)
-  
+  req(coordcam())
   coordocam <- coordcam() # On met le fichier d'entrée dans coordocam
   
   coordocam$name <- as.character(coordocam$name) # On s'assure que le nom de la camera est bien en character
@@ -513,23 +524,20 @@ carte_ab_rel_esp <- reactive({
   
   aboncoordocam = left_join(aboncam,coordocam1, by = c("Camera" = "Camera")) #jointure gauche des coordonnées !
   
+  # Transformation en d.f de classe sf (d.f spatial), ajoute le champ geometry qui contient le couple de coordonnées, et retire les 2 champs de coordonnées simple:
   
-  # Transformation en objet sf (d.f spatial), ajoute le champ geometry qui contient les 2 coordonnées:
-  
-  aboncoordocam1 <- st_as_sf(aboncoordocam,coords=c("utm_x","utm_y"),crs=input$epsg)  
+  req(EPSG())
+  aboncoordocam1 <- st_as_sf(aboncoordocam,coords=c("utm_x","utm_y"),crs=EPSG())  
   
   # Manip de sélection de l'espèce :
-  
   x <- as.character(input$selectSp)
   aboncoordocam2 <- aboncoordocam1
   # si "All" est encodé, graphique de toute les epsèces, si le nome d'une espèe est encodé, le prend en compte
   if (input$selectSp != "All")
     aboncoordocam2 <- aboncoordocam1[aboncoordocam1$Species == x,]
   
-  plot(aboncoordocam2$geometry) })
-  
- coefs <- reative({
-   emmprise <- st_bbox(SHP())
+  # Préparation de coeffs issus de l'emprise des coordonnées afin de produire une marge pour une meilleure visibilité des points et pour placer l'échelle et la flèche nord
+   emmprise <- st_bbox(aboncooordocam2)
    xmin <- emmprise[1]
    ymin <- emmprise[2]
    xmax <- emmprise[3]
@@ -544,7 +552,7 @@ carte_ab_rel_esp <- reactive({
    coefy <- as.numeric(diffy/7)
    coefx
    coefy
-     })
+     }) # On prépare les données pour les ggplots
  
  carte1 <- reactive({ 
    ggplot() +
