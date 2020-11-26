@@ -204,7 +204,8 @@ tabPanel("Cacher la Note d'utilisateur",
 ## Partie Server ------------------------------------------------ 
 # traitement de données, récupération des inputs, préparation des outputs
 
-server <- function(input, output, session) {   #Objet "session" rajouté pour le bon fonctionnement de l'observe
+server <- function(input, output, session) {   
+  #Objet "session" rajouté pour le bon fonctionnement de l'observe
  
 # Lecture et préparation des données issues des inputs : ---------------------------------
   
@@ -220,10 +221,8 @@ server <- function(input, output, session) {   #Objet "session" rajouté pour le
   })
   
   
-  SHP <- reactive({
+ # SHP <- reactive({})
       # Trouver une solution : st_read est pas supporté par shiny, il plante et dit que le fichier est corrompu...
-    
-  })
   
   coordcam <- reactive({
     
@@ -503,14 +502,16 @@ output$downloadData <- downloadHandler(
 
 # Traitement et préparation des données utiles aux cartes 
 
-req(input$epsg)
-EPSG <- reactive({as.numeric(input$epsg)}) # On récupère l'epsg de manière réactive.
+EPSG <- reactive({input$epsg}) # On récupère l'epsg de manière réactive.
 
 données_cartes_ab_rel_esp <- reactive({ 
   
   req(data())
   # Création du jeu de données aggrégées sans coordonnées : 
   aboncam <- aggregate(Individuals ~ Species+Camera, data = data(), sum)
+  tot <- sum(aboncam$Individuals)
+  aboncam$aboncam1 <- (aboncam$Individuals/tot)*100
+  aboncam2 <- cbind(nb,aboncam1)
   
   # Création du jeu de données avec les coordonnées par jointure (objet data.frame)
   req(coordcam())
@@ -520,13 +521,12 @@ données_cartes_ab_rel_esp <- reactive({
   coordocam1 = dplyr::select(coordocam,utm_x:utm_y,Camera = name) # On vire ce qui n'est pas utile, on ne garde que le nom de la camera (colonne name renommée Camera) et les coordonnées x et y utm
   
   coordocam1$Camera=as.character(coordocam$Camera)
-  aboncam$Camera=as.character(aboncam$Camera) # On transforme les valeurs des champs Camera en character afin de pouvoir effectuer la jointure
+  aboncam2$Camera=as.character(aboncam$Camera) # On transforme les valeurs des champs Camera en character afin de pouvoir effectuer la jointure
   
-  aboncoordocam = left_join(aboncam,coordocam1, by = c("Camera" = "Camera")) #jointure gauche des coordonnées !
+  aboncoordocam = left_join(aboncam2,coordocam1, by = c("Camera" = "Camera")) #jointure gauche des coordonnées !
   
   # Transformation en d.f de classe sf (d.f spatial), ajoute le champ geometry qui contient le couple de coordonnées, et retire les 2 champs de coordonnées simple:
-  
-  req(EPSG())
+
   aboncoordocam1 <- st_as_sf(aboncoordocam,coords=c("utm_x","utm_y"),crs=EPSG())  
   
   # Manip de sélection de l'espèce :
@@ -557,12 +557,39 @@ données_cartes_ab_rel_esp <- reactive({
  carte1 <- reactive({ 
    ggplot() +
      geom_sf(data=SHP()) +
-     coord_sf(crs = st_crs(input$epsg),xlim=c(xmin-coefx,xmax+coefx),ylim=c(ymin-coefy,ymax+coefy), expand = FALSE)
+     coord_sf(crs = st_crs(EPSG()),xlim=c(xmin-coefx,xmax+coefx),ylim=c(ymin-coefy,ymax+coefy), expand = FALSE)
      })
  
+ output$carte_ab_esp <- renderPlot ({
+   ggplot() +
+     geom_sf(mapping=aes(size=aboncam1, color=aboncam1) ,data=aboncoordocam2) +
+     coord_sf(crs = st_crs(32632),xlim=c(xmin-coefx,xmax+coefx),ylim=c(ymin-coefy,ymax+coefy), expand = FALSE) +
+     scale_size_continuous(name = "Abondance (en %)", range=c(1,10)) +
+     scale_colour_gradientn(name = "Abondance (en %)", colours = terrain.colors(5)) + 
+     guides(size=FALSE) +
+     labs(title = "Cartographie de l'abondance des espèces ",
+          subtitle = "Par caméra et par espèce",
+          caption = "Données source : data caméra trap",
+          x = "utm_x", y = "utm_y") +
+     theme_dark() +
+     theme(
+       legend.position = c(1.2, 0.5),
+       legend.direction = "vertical",
+       legend.key.size = unit(0.5, "cm"),
+       legend.key.width = unit(0.5,"cm"),
+       legend.title = element_text(color = "red", size = 9, face = "bold"),
+       legend.text = element_text(color = "red", size = 8),
+       plot.title = element_text(hjust = 0.5, size = 15, face = "bold"),
+       plot.subtitle = element_text(hjust = 0.5),
+       axis.title.x = element_text(color = "red", size = 10, face = "bold"),
+       axis.title.y = element_text(color = "red", size = 10, face = "bold")) +
+     annotation_scale(location = "tr", width_hint = 0.3) +
+     annotation_north_arrow(location = "tr", which_north = "true", 
+                            pad_x = unit(0.2, "cm"), pad_y = unit(0.4, "cm"),
+                            style = north_arrow_fancy_orienteering) 
+     })
 
 # Renerplot des données
-output$carte_ab_esp <- renderPlot({carte_ab_rel_esp()}) 
 output$test_shp <- renderPlot({carte1()})
 
 
@@ -579,7 +606,7 @@ output$test_shp <- renderPlot({carte1()})
   if (input$selectSp != "All")
   df <- df[df$Species == x,]
   
-  # récupéré les heures concernées de l'espèce choisie
+  # récupérer les heures concernées de l'espèce choisie
   
   heurea <- df$Hour
   a <- lubridate ::hms(as.character(heurea))
