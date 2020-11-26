@@ -114,14 +114,18 @@ tabPanel("Cacher la Note d'utilisateur",
 ))
 )),
 ## Ouverture des onglets ----------------------------------------------
-  mainPanel(tabsetPanel(
+  mainPanel(br(),
+            "Cette application Shiny est dédiée à l’analyse de données issues d’inventaire 
+                        par pièges photographiques. Elle permet par une analyse automatisée de fournir 
+                        quelques indicateurs qui caractérisent les inventaires de faune menés, la communauté 
+                        et les espèces animale détectées le tout sous forme de tableaux, graphiques et cartes 
+                        facilement téléchargeables.",
+            br(),
+    tabsetPanel(
 ## Onglet "Caractéristique des communautés" ---------------------------------------------
     tabPanel("Caractéristiques des communautés",
              fluidRow(
                column(width = 12,
-                      "Cette application Shiny est dédiée à l’analyse de données issues d’inventaire par pièges photographiques. Elle permet par une analyse automatisée de fournir quelques indicateurs qui caractérisent les inventaires de faune menés, la communauté et les espèces animale détectées le tout sous forme de tableaux, graphiques et cartes facilement téléchargeables.",
-                      br(),
-                      br(),
                       "Vous trouverez ci-dessous un tableau récapitulatif de la communauté détectée durant votre/vos inventaire(s).",
                       br(),
                       tableOutput("richesse"),
