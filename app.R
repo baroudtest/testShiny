@@ -536,14 +536,15 @@ données_cartes_ab_rel_esp <- reactive({
   if (input$selectSp != "All")
     aboncoordocam2 <- aboncoordocam1[aboncoordocam1$Species == x,]
   
-  # Préparation de coeffs issus de l'emprise des coordonnées afin de produire une marge pour une meilleure visibilité des points et pour placer l'échelle et la flèche nord
+  # Calcul et affectation des données de l'emprise de la carte :
    emmprise <- st_bbox(aboncooordocam2)
    xmin <- emmprise[1]
    ymin <- emmprise[2]
    xmax <- emmprise[3]
    ymax <- emmprise[4]
    
-   # Coeffs à affecter sur les coordonnées pour générer une emprise élargie
+   
+   # Préparation de coeffs issus de l'emprise des coordonnées afin de produire une marge pour une meilleure visibilité des points et pour placer l'échelle et la flèche nord
    diffx <- abs(abs(xmax)-abs(xmin))
    diffy <- abs(abs(ymax)-abs(ymin))
    diffx
@@ -552,6 +553,8 @@ données_cartes_ab_rel_esp <- reactive({
    coefy <- as.numeric(diffy/7)
    coefx
    coefy
+   
+   aboncoordocam1
      }) # On prépare les données pour les ggplots
  
  carte1 <- reactive({ 
@@ -562,8 +565,8 @@ données_cartes_ab_rel_esp <- reactive({
  
  output$carte_ab_esp <- renderPlot ({
    ggplot() +
-     geom_sf(mapping=aes(size=aboncam1, color=aboncam1) ,data=aboncoordocam2) +
-     coord_sf(crs = st_crs(32632),xlim=c(xmin-coefx,xmax+coefx),ylim=c(ymin-coefy,ymax+coefy), expand = FALSE) +
+     geom_sf(mapping=aes(size=aboncam1, color=aboncam1) ,data=aboncoordocam1) +
+     coord_sf(crs = st_crs(EPSG()),xlim=c(xmin-coefx,xmax+coefx),ylim=c(ymin-coefy,ymax+coefy), expand = FALSE) +
      scale_size_continuous(name = "Abondance (en %)", range=c(1,10)) +
      scale_colour_gradientn(name = "Abondance (en %)", colours = terrain.colors(5)) + 
      guides(size=FALSE) +
