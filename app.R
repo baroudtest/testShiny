@@ -432,7 +432,8 @@ observe({
   updateSelectizeInput(
     session,
     inputId = "selectSp",
-    choices = c(data()$Species, "All")
+    choices = c("All", data()$Species),
+    selected = "All"
   )  
 })
 
@@ -440,7 +441,8 @@ observe({
   updateSelectizeInput(
     session,
     inputId = "selectLoc",
-    choices = c(data()$Site, "All")
+    choices = c("All", data()$Site),
+    selected = "All"
   )  
 })
 
