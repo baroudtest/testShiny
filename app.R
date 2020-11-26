@@ -205,6 +205,7 @@ tabPanel("Cacher la Note d'utilisateur",
 
 
 
+
 ## Partie Server ------------------------------------------------ 
 # traitement de données, récupération des inputs, préparation des outputs
 
@@ -547,7 +548,7 @@ gps_cartes_richesse_spe <- reactive({
   # Transformation en d.f de classe sf (d.f spatial), ajoute le champ geometry qui contient le couple de coordonnées, et retire les 2 champs de coordonnées simple:
   req(EPSG())
   epsg <-EPSG()
-  aboncoordocam1 <- st_as_sf(aboncoordocam,coords=c("utm_x","utm_y"),crs=epsg)
+  aboncoordocam1 <- st_as_sf(aboncoordocam,coords=c("utm_y","utm_x"),crs=epsg)
   aboncoordocam1})
   
 # Manip de sélection de l'espèce :
