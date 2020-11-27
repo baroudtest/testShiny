@@ -227,7 +227,7 @@ server <- function(input, output, session) {
   
   
    SHP <- reactive({
-     shape <- st_read(input$shp$datapath,stringsAsFactors = F)
+     shape <- st_read(as.character(input$shp$datapath),stringsAsFactors = F)
      shape
    })
       # Trouver une solution : st_read est pas supporté par shiny, il plante et dit que le fichier est corrompu...
@@ -584,14 +584,14 @@ gps_cartes_abon_paresp <- reactive({
    diffy <- abs(abs(ymax)-abs(ymin))
    diffx
    diffy
-   coefx <- as.numeric(diffx/7)
-   coefy <- as.numeric(diffy/7)
+   coefx <- as.numeric(diffx/6)
+   coefy <- as.numeric(diffy/6)
    coefx
    coefy
    
    poly1 <- ggplot() +
      geom_sf(data=shp) +
-     coord_sf(crs = st_crs(epsg),xlim=c(xmin-coefx,xmax+coefx),ylim=c(ymin-coefy,ymax+coefy), expand = FALSE)
+     coord_sf(crs = st_crs(epsg),xlim=c(xmin-coefx,xmax+coefx),ylim=c(ymin-coefy,ymax+coefy), datum = sf::st_crs(4326), expand = FALSE)
    poly1  
    })
  
@@ -614,24 +614,24 @@ gps_cartes_abon_paresp <- reactive({
    diffy <- abs(abs(ymax)-abs(ymin))
    diffx
    diffy
-   coefx <- as.numeric(diffx/7)
-   coefy <- as.numeric(diffy/7)
+   coefx <- as.numeric(diffx/6)
+   coefy <- as.numeric(diffy/6)
    coefx
    coefy
    
    carte1 <- ggplot() +
      geom_sf(mapping=aes(size=aboncam1, color=aboncam1) ,data=richespe) +
      coord_sf(crs = st_crs(epsg),xlim=c(xmin-coefx,xmax+coefx),ylim=c(ymin-coefy,ymax+coefy), datum = sf::st_crs(4326), expand = FALSE) +
-     scale_size_continuous(name = "Abondance (en %)", range=c(1,10)) +
+     scale_size_continuous(name = "Abondance (en %)", range=c(1,6)) +
      scale_colour_gradientn(name = "Abondance (en %)", colours = terrain.colors(5)) + 
      guides(size=FALSE) +
-     labs(title = "Cartographie de l'abondance des espèces ",
-          subtitle = "Par caméra et par espèce",
-          caption = "Données source : data caméra trap",
+     labs(title = "Cartographie de la richesse spécifique",
+          subtitle = "Toutes caméras confondues",
+          caption = "La taille des points est proportionnelle à la richesse spécifique",
           x = "utm_x", y = "utm_y") +
      theme_dark() +
      theme(
-       legend.position = c(1.2, 0.5),
+       legend.position = c(1.1, 0.5),
        legend.direction = "vertical",
        legend.key.size = unit(0.5, "cm"),
        legend.key.width = unit(0.5,"cm"),
@@ -643,7 +643,7 @@ gps_cartes_abon_paresp <- reactive({
        axis.title.y = element_text(color = "red", size = 10, face = "bold")) +
      annotation_scale(location = "tr", width_hint = 0.3) +
      annotation_north_arrow(location = "tr", which_north = "true", 
-                            pad_x = unit(0.2, "cm"), pad_y = unit(0.4, "cm"),
+                            pad_x = unit(0.2, "cm"), pad_y = unit(0.6, "cm"),
                             style = north_arrow_fancy_orienteering)
    
    carte1
