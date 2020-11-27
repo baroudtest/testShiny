@@ -1,3 +1,7 @@
+library(shinycssloaders)
+#install.packages("shinycssloaders")
+library(ggplotify)
+#install.packages("ggplotify")
 library(shiny)
 #install.packages("shiny")
 library(lubridate)
@@ -541,7 +545,7 @@ données_cartes_ab_rel_esp <- reactive({
   aboncam <- aggregate(Individuals ~ Species+Camera, data = data1, sum)
   tot <- sum(aboncam$Individuals)
   aboncam$aboncam1 <- (aboncam$Individuals/tot)*100
-  aboncam2 <- cbind(nb,aboncam1)
+  aboncam2 <- aboncam
   aboncam2
 })
   # Création du jeu de données avec les coordonnées par jointure (objet data.frame)
@@ -572,11 +576,11 @@ gps_cartes_abon_paresp <- reactive({
   req(gps_cartes_richesse_spe())
   aboncord <- gps_cartes_richesse_spe()
   req(input$selectSp)
-  x <- as.character(input$selectSp)
+  y <- as.character(input$selectSp)
   aboncoordocam2 <- aboncord
   # si "All" est encodé, graphique de toute les epsèces, si le nom d'une espèe est encodé, le prend en compte
   if (input$selectSp != "All")
-    aboncoordocam2 <- aboncord[aboncord$Species == x,]
+    aboncoordocam2 <- aboncord[aboncord$Species == y,]
   aboncordocam2 # A modifier, pour le test seulement 
 })
   
