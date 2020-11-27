@@ -321,23 +321,30 @@ tableCom <- reactive({
   tab1 <- merge(tab1,rich,by=c("Site","Site"),all=T)
   datEN <- merge(data(),IUCN(),by="Species",all.x=T)
   datEN <- subset(datEN,datEN$IUCN=="EN"|datEN$IUCN=="CR")
-  EN <- aggregate(Individuals ~ Site+Species, data = datEN, sum)
-  EN <- aggregate(Individuals ~ Site, data = EN, length)
-  tab1 <- merge(tab1,EN,by=c("Site","Site"),all=T)
+  if(nrow(rich)>1){
+    EN <- aggregate(Individuals ~ Site+Species, data = datEN, sum)
+    EN <- aggregate(Individuals ~ Site, data = EN, length)
+    tab1 <- merge(tab1,EN,by=c("Site","Site"),all=T)
+  } else {
+    tab1$EN <- 0
+  }
   names(tab1) <- c("Site","Nombre de caméras","Effort d'inventaire",
                    "Richesse spécifique","Nombre d'espèces menacées")
-  n <- length(tab1$Site)
-  tab1[n+1,1] <- "TOTAL"
-  tab1[n+1,2] <- sum(tab1[-(n+1),2])
-  tab1[n+1,3] <- sum(tab1[-(n+1),3])
-  richTot <- aggregate(Individuals ~ Species, data = data(), length)
-  tab1[n+1,4] <- nrow(richTot)
-  ENTot <- aggregate(Individuals ~ Species, data = datEN, length)
-  tab1[n+1,5] <- nrow(ENTot)
+  if(nrow(datEN)>=1){
+    n <- length(tab1$Site)
+    tab1[n+1,1] <- "TOTAL"
+    tab1[n+1,2] <- sum(tab1[-(n+1),2])
+    tab1[n+1,3] <- sum(tab1[-(n+1),3])
+    richTot <- aggregate(Individuals ~ Species, data = data(), length)
+    tab1[n+1,4] <- nrow(richTot)
+    ENTot <- aggregate(Individuals ~ Species, data = datEN, length)
+    tab1[n+1,5] <- nrow(ENTot)
+  }
   tab1
 })
 
 output$richesse <- renderTable({
+  req(input$file)
   tableCom()
 })
 
