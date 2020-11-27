@@ -526,7 +526,7 @@ données_cartes_ab_rel_esp <- reactive({
   aboncam <- aggregate(Individuals ~ Species+Camera, data = data1, sum)
   tot <- sum(aboncam$Individuals)
   aboncam$aboncam1 <- (aboncam$Individuals/tot)*100
-  aboncam2 <- cbind(nb,aboncam1)
+  aboncam2 <- cbind(aboncam,aboncam1)
   aboncam2
 })
   # Création du jeu de données avec les coordonnées par jointure (objet data.frame)
