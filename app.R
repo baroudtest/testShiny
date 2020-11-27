@@ -38,8 +38,8 @@ library(reshape2)
 #install.packages("reshape2")
 library(vegan)
 #install.packages("vegan")
-library(ggplotify)
 library(shinycssloaders)
+#install.packages("shinycssloaders")
 
 ## Agencement fluipage sur la page, outils d'interactions (uploader un fichier, case à cocher, sliders,...)----
 ui <- fluidPage(
@@ -56,12 +56,7 @@ sidebarLayout(
     h5("(ou à uploader du serveur de la fac : soit fait par l'utilisateur, soit automatique)"),
     br(),
     br(),
-    fileInput("file",h2("Table de données")) # fileIput est l'outil permettant de lire un fichier de son choix à uploader
-    ,
-    fileInput("infocam",h2("Informations de localisation des caméras")),
-    fileInput("shp",h3("Ajouter un polygone de délimitation de zones")),
-    numericInput("epsg",h3("Sélectionnez l'EPSG souhaité pour la cartographie"),32632),
-    
+    fileInput("file",h2("Table de données")), # fileIput est l'outil permettant de lire un fichier de son choix à uploader
     br(),
     div(textOutput("erreur1"), style = "color:red"),
     div(textOutput("erreur2"), style = "color:red"),
@@ -74,6 +69,11 @@ sidebarLayout(
     div(textOutput("erreur9"), style = "color:red"),
     br(),
    
+    fileInput("infocam",h2("Informations de localisation des caméras")),
+    fileInput("shp",h3("Ajouter un polygone de délimitation de zones")),
+    numericInput("epsg",h3("Sélectionnez l'EPSG souhaité pour la cartographie"),32632),
+    
+    
    
 # Note utilisateur
 
@@ -192,8 +192,8 @@ tabPanel("Cacher la Note d'utilisateur",
     tabPanel("Cartes",
              fluidRow(
                column(width = 12,
-                      plotOutput("test_shp"),
-                      plotOutput("carte_richesse_spe")
+                      withSpinner(plotOutput("test_shp")),
+                      withSpinner(plotOutput("carte_richesse_spe"))
     )))
 
 ## Fermeture des onglets ----------------------------------------
@@ -350,7 +350,7 @@ output$downloadCom <- downloadHandler(
 
 # Création de la courbe d'accumulation en réactive de façon à pouvoir la télécharger
 ##PLUSIEURS SITES PAR GRAPHIQUE
-accumul <- reactive ({
+accumul <- function (){
   
   matriceSite <- aggregate(Individuals ~ Date+Site+Species,data=data(),sum)
   matriceSite$Date <- dmy(matriceSite$Date)
@@ -384,17 +384,12 @@ accumul <- reactive ({
     plot(accumSite[[i]],xlab = "Nb de jours d'inventaire cumulés",ylab = "Nombre d'espèces",
          ci=0,add=T,col=i+1) #ajouter legende : couleurs selon les sites
   }
-})
+}
 
 # Encodage du graphique réactif en output de manière à l'afficher
 output$accumul <- renderPlot({
   req(input$file)
   accumul()
-})
-
-GGaccumul <- reactive({
-  as.ggplot(function() accumul())
-  
 })
 
 # gérer le téléchargement du graphique d'accumulation 
@@ -404,11 +399,16 @@ output$downloadAccumul <- downloadHandler(
   content = function(file) {
 
     png(file)
-    print(GGaccumul())
+    accumul()
     dev.off()
 }
 
 
+#filename = "Modified_image.jpeg",
+#contentType = "image/jpeg",
+#content = function(file) {
+  ## copy the file from the updated image location to the final download location
+ # file.copy(updatedImageLoc(), file)
   #  content = function(file) {
  # ggsave(file, plot = plotInput(), device = "png")
 )
