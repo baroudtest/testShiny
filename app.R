@@ -638,6 +638,7 @@ gps_cartes_abon_paresp <- reactive({
    coefx
    coefy
    
+   
    carte1 <- ggplot() +
      geom_sf(mapping=aes(size=aboncam1, color=aboncam1) ,data=richespe) +
      coord_sf(crs = st_crs(epsg),xlim=c(xmin-coefx,xmax+coefx),ylim=c(ymin-coefy,ymax+coefy), datum = sf::st_crs(4326), expand = FALSE) +
