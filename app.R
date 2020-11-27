@@ -116,14 +116,18 @@ tabPanel("Cacher la Note d'utilisateur",
 ))
 )),
 ## Ouverture des onglets ----------------------------------------------
-  mainPanel(tabsetPanel(
+  mainPanel(br(),
+            "Cette application Shiny est dédiée à l’analyse de données issues d’inventaire 
+                        par pièges photographiques. Elle permet par une analyse automatisée de fournir 
+                        quelques indicateurs qui caractérisent les inventaires de faune menés, la communauté 
+                        et les espèces animale détectées le tout sous forme de tableaux, graphiques et cartes 
+                        facilement téléchargeables.",
+            br(),
+    tabsetPanel(
 ## Onglet "Caractéristique des communautés" ---------------------------------------------
     tabPanel("Caractéristiques des communautés",
              fluidRow(
                column(width = 12,
-                      "Cette application Shiny est dédiée à l’analyse de données issues d’inventaire par pièges photographiques. Elle permet par une analyse automatisée de fournir quelques indicateurs qui caractérisent les inventaires de faune menés, la communauté et les espèces animale détectées le tout sous forme de tableaux, graphiques et cartes facilement téléchargeables.",
-                      br(),
-                      br(),
                       "Vous trouverez ci-dessous un tableau récapitulatif de la communauté détectée durant votre/vos inventaire(s).",
                       br(),
                       withSpinner(tableOutput("richesse")),
@@ -188,8 +192,8 @@ tabPanel("Cacher la Note d'utilisateur",
     tabPanel("Cartes",
              fluidRow(
                column(width = 12,
-                      plotOutput("carte_ab_esp"),
-                      plotOutput("test_shp")
+                      plotOutput("test_shp"),
+                      plotOutput("carte_richesse_spe")
     )))
 
 ## Fermeture des onglets ----------------------------------------
@@ -201,6 +205,7 @@ tabPanel("Cacher la Note d'utilisateur",
 ) #Close sidebarLayout
 
 ) #Close fluidPage
+
 
 
 
@@ -224,7 +229,10 @@ server <- function(input, output, session) {
   })
   
   
- # SHP <- reactive({})
+   SHP <- reactive({
+     shape <- st_read(as.character(input$shp$datapath),stringsAsFactors = F)
+     shape
+   })
       # Trouver une solution : st_read est pas supporté par shiny, il plante et dit que le fichier est corrompu...
   
   coordcam <- reactive({
@@ -235,7 +243,11 @@ server <- function(input, output, session) {
                            sep = ";",
                            quote = '"',
                            colClasses = "character")
-    infocamera
+    
+    infocamera$utm_x <- as.numeric(infocamera$utm_x)
+    infocamera$utm_y <- as.numeric(infocamera$utm_y)
+    infocamera1 <- na.omit(infocamera)
+    infocamera1
   })
   
   data <- reactive({
@@ -444,7 +456,8 @@ observe({
   updateSelectizeInput(
     session,
     inputId = "selectSp",
-    choices = c(data()$Species, "All")
+    choices = c("All", data()$Species),
+    selected = "All"
   )  
 })
 
@@ -452,7 +465,8 @@ observe({
   updateSelectizeInput(
     session,
     inputId = "selectLoc",
-    choices = c(data()$Site, "All")
+    choices = c("All", data()$Site),
+    selected = "All"
   )  
 })
 
@@ -522,73 +536,117 @@ EPSG <- reactive({input$epsg}) # On récupère l'epsg de manière réactive.
 données_cartes_ab_rel_esp <- reactive({ 
   
   req(data())
+  data1 <- data()
   # Création du jeu de données aggrégées sans coordonnées : 
-  aboncam <- aggregate(Individuals ~ Species+Camera, data = data(), sum)
+  aboncam <- aggregate(Individuals ~ Species+Camera, data = data1, sum)
   tot <- sum(aboncam$Individuals)
   aboncam$aboncam1 <- (aboncam$Individuals/tot)*100
   aboncam2 <- cbind(nb,aboncam1)
-  
+  aboncam2
+})
   # Création du jeu de données avec les coordonnées par jointure (objet data.frame)
+gps_cartes_richesse_spe <- reactive({
+  # On récupère les données :
   req(coordcam())
   coordocam <- coordcam() # On met le fichier d'entrée dans coordocam
+  req(données_cartes_ab_rel_esp)
+  aboncam3 <- données_cartes_ab_rel_esp()
   
   coordocam$name <- as.character(coordocam$name) # On s'assure que le nom de la camera est bien en character
   coordocam1 = dplyr::select(coordocam,utm_x:utm_y,Camera = name) # On vire ce qui n'est pas utile, on ne garde que le nom de la camera (colonne name renommée Camera) et les coordonnées x et y utm
   
-  coordocam1$Camera=as.character(coordocam$Camera)
-  aboncam2$Camera=as.character(aboncam$Camera) # On transforme les valeurs des champs Camera en character afin de pouvoir effectuer la jointure
+  coordocam1$Camera=as.character(coordocam1$Camera)
+  aboncam3$Camera=as.character(aboncam3$Camera) # On transforme les valeurs des champs Camera en character afin de pouvoir effectuer la jointure
   
-  aboncoordocam = left_join(aboncam2,coordocam1, by = c("Camera" = "Camera")) #jointure gauche des coordonnées !
+  aboncoordocam = left_join(aboncam3,coordocam1, by = c("Camera" = "Camera")) #jointure gauche des coordonnées !
   
   # Transformation en d.f de classe sf (d.f spatial), ajoute le champ geometry qui contient le couple de coordonnées, et retire les 2 champs de coordonnées simple:
+  req(EPSG())
+  epsg <-EPSG()
+  aboncoordocam1 <- st_as_sf(aboncoordocam,coords=c("utm_y","utm_x"),crs=epsg)
+  aboncoordocam1})
+  
+# Manip de sélection de l'espèce :
 
-  aboncoordocam1 <- st_as_sf(aboncoordocam,coords=c("utm_x","utm_y"),crs=EPSG())  
-  
-  # Manip de sélection de l'espèce :
+gps_cartes_abon_paresp <- reactive({
+  req(gps_cartes_richesse_spe())
+  aboncord <- gps_cartes_richesse_spe()
+  req(input$selectSp)
   x <- as.character(input$selectSp)
-  aboncoordocam2 <- aboncoordocam1
-  # si "All" est encodé, graphique de toute les epsèces, si le nome d'une espèe est encodé, le prend en compte
+  aboncoordocam2 <- aboncord
+  # si "All" est encodé, graphique de toute les epsèces, si le nom d'une espèe est encodé, le prend en compte
   if (input$selectSp != "All")
-    aboncoordocam2 <- aboncoordocam1[aboncoordocam1$Species == x,]
+    aboncoordocam2 <- aboncord[aboncord$Species == x,]
+  aboncordocam2 # A modifier, pour le test seulement 
+})
   
-  # Préparation de coeffs issus de l'emprise des coordonnées afin de produire une marge pour une meilleure visibilité des points et pour placer l'échelle et la flèche nord
-   emmprise <- st_bbox(aboncooordocam2)
+ # Test carto polygone 
+
+ output$test_shp <- renderPlot ({
+   req(EPSG())
+   epsg <-EPSG()
+   req(SHP())
+   shp <- SHP()
+   emmprise <- st_bbox(shp)
    xmin <- emmprise[1]
    ymin <- emmprise[2]
    xmax <- emmprise[3]
    ymax <- emmprise[4]
    
-   # Coeffs à affecter sur les coordonnées pour générer une emprise élargie
+   
+   # Préparation de coeffs issus de l'emprise des coordonnées afin de produire une marge pour une meilleure visibilité des points et pour placer l'échelle et la flèche nord
    diffx <- abs(abs(xmax)-abs(xmin))
    diffy <- abs(abs(ymax)-abs(ymin))
    diffx
    diffy
-   coefx <- as.numeric(diffx/7)
-   coefy <- as.numeric(diffy/7)
+   coefx <- as.numeric(diffx/6)
+   coefy <- as.numeric(diffy/6)
    coefx
    coefy
-     }) # On prépare les données pour les ggplots
+   
+   poly1 <- ggplot() +
+     geom_sf(data=shp) +
+     coord_sf(crs = st_crs(epsg),xlim=c(xmin-coefx,xmax+coefx),ylim=c(ymin-coefy,ymax+coefy), datum = sf::st_crs(4326), expand = FALSE)
+   poly1  
+   })
  
- carte1 <- reactive({ 
-   ggplot() +
-     geom_sf(data=SHP()) +
-     coord_sf(crs = st_crs(EPSG()),xlim=c(xmin-coefx,xmax+coefx),ylim=c(ymin-coefy,ymax+coefy), expand = FALSE)
-     })
+ # Test carto richesse spé :
  
- output$carte_ab_esp <- renderPlot ({
-   ggplot() +
-     geom_sf(mapping=aes(size=aboncam1, color=aboncam1) ,data=aboncoordocam2) +
-     coord_sf(crs = st_crs(32632),xlim=c(xmin-coefx,xmax+coefx),ylim=c(ymin-coefy,ymax+coefy), expand = FALSE) +
-     scale_size_continuous(name = "Abondance (en %)", range=c(1,10)) +
+ output$carte_richesse_spe <- renderPlot ({ 
+   # Calcul et affectation des données de l'emprise de la carte :
+   req(EPSG())
+   epsg <-EPSG()
+   req(gps_cartes_richesse_spe())
+   richespe <- gps_cartes_richesse_spe()
+   emmprise <- st_bbox(richespe)
+   xmin <- emmprise[1]
+   ymin <- emmprise[2]
+   xmax <- emmprise[3]
+   ymax <- emmprise[4]
+   
+   # Préparation de coeffs issus de l'emprise des coordonnées afin de produire une marge pour une meilleure visibilité des points et pour placer l'échelle et la flèche nord
+   diffx <- abs(abs(xmax)-abs(xmin))
+   diffy <- abs(abs(ymax)-abs(ymin))
+   diffx
+   diffy
+   coefx <- as.numeric(diffx/6)
+   coefy <- as.numeric(diffy/6)
+   coefx
+   coefy
+   
+   carte1 <- ggplot() +
+     geom_sf(mapping=aes(size=aboncam1, color=aboncam1) ,data=richespe) +
+     coord_sf(crs = st_crs(epsg),xlim=c(xmin-coefx,xmax+coefx),ylim=c(ymin-coefy,ymax+coefy), datum = sf::st_crs(4326), expand = FALSE) +
+     scale_size_continuous(name = "Abondance (en %)", range=c(1,6)) +
      scale_colour_gradientn(name = "Abondance (en %)", colours = terrain.colors(5)) + 
      guides(size=FALSE) +
-     labs(title = "Cartographie de l'abondance des espèces ",
-          subtitle = "Par caméra et par espèce",
-          caption = "Données source : data caméra trap",
+     labs(title = "Cartographie de la richesse spécifique",
+          subtitle = "Toutes caméras confondues",
+          caption = "La taille des points est proportionnelle à la richesse spécifique",
           x = "utm_x", y = "utm_y") +
      theme_dark() +
      theme(
-       legend.position = c(1.2, 0.5),
+       legend.position = c(1.1, 0.5),
        legend.direction = "vertical",
        legend.key.size = unit(0.5, "cm"),
        legend.key.width = unit(0.5,"cm"),
@@ -600,12 +658,11 @@ données_cartes_ab_rel_esp <- reactive({
        axis.title.y = element_text(color = "red", size = 10, face = "bold")) +
      annotation_scale(location = "tr", width_hint = 0.3) +
      annotation_north_arrow(location = "tr", which_north = "true", 
-                            pad_x = unit(0.2, "cm"), pad_y = unit(0.4, "cm"),
-                            style = north_arrow_fancy_orienteering) 
+                            pad_x = unit(0.2, "cm"), pad_y = unit(0.6, "cm"),
+                            style = north_arrow_fancy_orienteering)
+   
+   carte1
      })
-
-# Renerplot des données
-output$test_shp <- renderPlot({carte1()})
 
 
 # Création du graphique d'activité en 24h en réactive de façon à pouvoir le télécharger
