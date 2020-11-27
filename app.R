@@ -38,6 +38,8 @@ library(reshape2)
 #install.packages("reshape2")
 library(vegan)
 #install.packages("vegan")
+library(ggplotify)
+library(shinycssloaders)
 
 ## Agencement fluipage sur la page, outils d'interactions (uploader un fichier, case à cocher, sliders,...)----
 ui <- fluidPage(
@@ -124,7 +126,7 @@ tabPanel("Cacher la Note d'utilisateur",
                       br(),
                       "Vous trouverez ci-dessous un tableau récapitulatif de la communauté détectée durant votre/vos inventaire(s).",
                       br(),
-                      tableOutput("richesse"),
+                      withSpinner(tableOutput("richesse")),
                       downloadButton("downloadCom", "Download"),
                       br(),
                       br()
@@ -135,7 +137,7 @@ tabPanel("Cacher la Note d'utilisateur",
                       "La richesse spécifique peut également s’analyser en fonction de l’effort d’échantillonnage réalisé, 
                       ce qui permet d’analyser l’exhaustivité de l’inventaire.",
                       br(),
-                      plotOutput("accumul"),
+                      withSpinner(plotOutput("accumul")),
                       downloadButton("downloadAccumul", "Download Graph"),
                       br()),
                column(width = 4,offset=1,
@@ -163,6 +165,7 @@ tabPanel("Cacher la Note d'utilisateur",
                       selectizeInput(inputId = "selectSp",
                                      label = "Sélection de l'espèce",
                                      choices = "",
+                                     selected = "",
                                      multiple = TRUE),
                       br(),
                       selectizeInput(inputId = "selectLoc",
@@ -172,10 +175,10 @@ tabPanel("Cacher la Note d'utilisateur",
                       br(),
                       downloadButton("downloadData", "Download"),
                       br(),
-                                  tableOutput("ab_rel"),
+                                 withSpinner(tableOutput("ab_rel")),
                       h3("Cacher/Dérouler le graphique"),
                       checkboxInput("affigraphique", "Afficher", value = TRUE),
-                                  plotOutput("graph24h"),
+                      withSpinner(plotOutput("graph24h")),
                                   downloadButton("downloadGraph", "Download Graph")
                                 
                           
@@ -360,6 +363,7 @@ accumul <- reactive ({
   rich <- aggregate(Individuals ~ Site+Species, data = data(), sum)
   rich <- aggregate(Individuals ~ Site, data = rich, length)
   m <- which(rich$Individuals==max(rich$Individuals))
+  
   plot(accumSite[[m]],xlab = "Nb de jours d'inventaire cumulés",ylab = "Nombre d'espèces",
        ci=0,col=2,key.pos=4) #ajouter legende : couleurs selon les sites
   title("Courbes d'accumulation")
@@ -376,17 +380,25 @@ output$accumul <- renderPlot({
   accumul()
 })
 
+GGaccumul <- reactive({
+  as.ggplot(function() accumul())
+  
+})
+
 # gérer le téléchargement du graphique d'accumulation 
 output$downloadAccumul <- downloadHandler(
   # filename pour définir le nom par défaut du fichier produit, Content pour choisir le graph dans l'image
-  filename = function() {paste("accumul", '.png', sep='') }, #ou //input$selectSp si choix avec tot
+  filename = function() {paste('accumul', '.png', sep='') }, #ou //input$selectSp si choix avec tot
   content = function(file) {
-    
+
     png(file)
-    print(accumul())
-    dev.off() 
-  }
-  
+    print(GGaccumul())
+    dev.off()
+}
+
+
+  #  content = function(file) {
+ # ggsave(file, plot = plotInput(), device = "png")
 )
 
 
@@ -496,7 +508,10 @@ output$downloadData <- downloadHandler(
   content = function(file) {
     write.table(tableEsp(), file,quote = TRUE, sep = ";",dec=",",row.names = FALSE, col.names = TRUE)
   } 
-)
+  
+  )
+
+
 
 # Création d'une cartographie des abondances relatives par espèce ------------------------------
 
