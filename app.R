@@ -60,7 +60,9 @@ sidebarLayout(
     h5("(ou à uploader du serveur de la fac : soit fait par l'utilisateur, soit automatique)"),
     br(),
     br(),
+   
     fileInput("file",h2("Table de données")), # fileIput est l'outil permettant de lire un fichier de son choix à uploader
+    div(textOutput("fichier1"), style = "color:green"),
     br(),
     div(textOutput("erreur1"), style = "color:red"),
     div(textOutput("erreur2"), style = "color:red"),
@@ -74,7 +76,10 @@ sidebarLayout(
     br(),
    
     fileInput("infocam",h2("Informations de localisation des caméras")),
+    div(textOutput("fichier2"), style = "color:green"),
+   
     fileInput("shp",h3("Ajouter un polygone de délimitation de zones")),
+    div(textOutput("fichier3"), style = "color:green"),
     numericInput("epsg",h3("Sélectionnez l'EPSG souhaité pour la cartographie"),32632),
     
     
@@ -154,7 +159,8 @@ tabPanel("Cacher la Note d'utilisateur",
                       h5("Pourcentage de détections nocturnes"),
                       textOutput("indnoc"),
                       br(),
-                      h5("Pourcentage de détections humaines"),
+                      h5("Présence humaine"),
+                      h6("(nombre d'hommes sur la durée en jours de l'inventaire"),
                       br(),
                       textOutput("homme"))
                )
@@ -441,6 +447,7 @@ output$indnoc <- renderText({
     
   }
   # nombre de détections nocturne sur nombre de détections totales
+  
   d <- (b / ligne) *100
   d
 })
@@ -458,9 +465,40 @@ output$homme <- renderText({
     {b <- b + data()$Individuals[c(i)]}
     
   }
-  # rapport du nombre de "Homo sapiens" sur le nombre de lignes totales
-  d <- (b / ligne) *100
+  # rapport du nombre de "Homo sapiens" sur le nombre de jours d'inventaires
+  donnees <- data()
+  jour <- as.character(donnees$Date)
+  jour <- dmy(jour)
+  premier <- min(jour)
+  dernier <- max(jour)
+  nbjour <- as.numeric(dernier - premier)
+  
+  d <- (b /nbjour)
   d
+})
+
+output$fichier1 <- renderText({
+  if (is.data.frame(input$file) == TRUE ) {texte1 <- "Table de donnée chargée"}
+  else texte1 <- {"Veuillez charger la table de données"}
+    
+  texte1
+  
+})
+
+
+output$fichier2 <- renderText({
+  if (is.data.frame(input$infocam) == TRUE ) {texte1 <- "Informations Caméras chargée"}
+  else texte2 <- {"Veuillez charger les Informations Caméras"}
+  
+
+  
+})
+
+output$ichier3 <- renderText({
+  req(input$shp)
+ texte3 <- "Shapefile chargé"
+ texte3
+  
 })
 
 observe({
