@@ -125,6 +125,7 @@ tabPanel("Cacher la Note d'utilisateur",
 ))
 )),
 ## Ouverture des onglets ----------------------------------------------
+# les withSpinners servent a implémenter l'animation de chargement
   mainPanel(br(),
             "Cette application Shiny est dédiée à l’analyse de données issues d’inventaire 
                         par pièges photographiques. Elle permet par une analyse automatisée de fournir 
@@ -465,18 +466,19 @@ output$homme <- renderText({
     {b <- b + data()$Individuals[c(i)]}
     
   }
-  # rapport du nombre de "Homo sapiens" sur le nombre de jours d'inventaires
+  # différence entre le premier et le dernier jour d'inventaire en jours
   donnees <- data()
   jour <- as.character(donnees$Date)
   jour <- dmy(jour)
   premier <- min(jour)
   dernier <- max(jour)
   nbjour <- as.numeric(dernier - premier)
-  
+# rapport du nombre de "Homo sapiens" sur le nombre de jours d'inventaires  
   d <- (b /nbjour)
   d
 })
 
+# message de chargement de table de données
 output$fichier1 <- renderText({
   if (is.data.frame(input$file) == TRUE ) {texte1 <- "Table de donnée chargée"}
   else texte1 <- {"Veuillez charger la table de données"}
@@ -485,7 +487,7 @@ output$fichier1 <- renderText({
   
 })
 
-
+# message de chargement des informations caméras
 output$fichier2 <- renderText({
   if (is.data.frame(input$infocam) == TRUE ) {texte1 <- "Informations Caméras chargée"}
   else texte2 <- {"Veuillez charger les Informations Caméras"}
@@ -494,6 +496,7 @@ output$fichier2 <- renderText({
   
 })
 
+# message de chargement optionnelle du shapefile
 output$ichier3 <- renderText({
   req(input$shp)
  texte3 <- "Shapefile chargé"
@@ -777,6 +780,8 @@ output$downloadGraph <- downloadHandler(
   
 )
 
+## message d'erreur ==> verification des noms de colonnes
+
 err <- reactive({
   req(input$file)
   
@@ -878,6 +883,8 @@ err <- c(LOk, SOk, DOk, COk, StOk, IOk, DOk, HOk, IgOk)
 err
   
 })
+
+# encodage des texte en output
 
 output$erreur1 <- renderText({
  req(input$file)
