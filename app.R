@@ -137,11 +137,13 @@ tabPanel("Cacher la Note d'utilisateur",
                         et les espèces animale détectées le tout sous forme de tableaux, graphiques et cartes 
                         facilement téléchargeables.",
             br(),
+            br(),
     tabsetPanel(
 ## Onglet "Caractéristique des communautés" ---------------------------------------------
     tabPanel("Caractéristiques des communautés",
              fluidRow(
                column(width = 12,
+                      br(),
                       "Vous trouverez ci-dessous un tableau récapitulatif de la communauté détectée durant votre/vos inventaire(s).",
                       br(),
                       withSpinner(tableOutput("richesse")),
@@ -174,12 +176,14 @@ tabPanel("Cacher la Note d'utilisateur",
     tabPanel("Analyse par espèce",
              fluidRow(
                column(width = 12,
+                                 br(),
                                  "De multiples indices peuvent être générés à partir des données 
                                   obtenues par pièges photographiques. Nous avons décidé de vous 
                                   présenter seulement le taux de détection standardisé par l’effort 
                                   d’inventaire, communément décrit sous le terme de RAI en anglais 
                                   (Relative Abundance index) . D’autres analyses sont possibles et des 
                                   ressources sont mobilisables dans la partie « Pour en savoir plus »",
+                                  br(),
                                   br(),
                       selectizeInput(inputId = "selectSp",
                                      label = "Sélection de l'espèce",
@@ -198,8 +202,9 @@ tabPanel("Cacher la Note d'utilisateur",
                       h3("Cacher/Dérouler le graphique"),
                       checkboxInput("affigraphique", "Afficher", value = TRUE),
                       withSpinner(plotOutput("graph24h")),
-                                  downloadButton("downloadGraph", "Download Graph")
-                                
+                                  downloadButton("downloadGraph", "Download Graph"),
+                      withSpinner(plotOutput("carte_abon_paresp")),
+                                  downloadButton("downloadMap3", "Download Map")
                           
     ))),
 
@@ -207,10 +212,13 @@ tabPanel("Cacher la Note d'utilisateur",
     tabPanel("Cartes",
              fluidRow(
                column(width = 12,
+                      br(),
                       withSpinner(plotOutput("carte_richesse_spe")),
+                      downloadButton("downloadMap1", "Download Map"),
                       br(),
                       br(),
                       withSpinner(plotOutput("carte_espèces_men")),
+                      downloadButton("downloadMap2", "Download Map"),
                       withSpinner(plotOutput("test_shp"))
     )))
 
@@ -718,7 +726,7 @@ donnees_cartes_abun <- reactive ({
   nb_indiv_selectesp <- n_indiv_cam_esp2
   # si "All" est encodé, graphique de toute les epsèces, si le nom d'une espèe est encodé, le prend en compte
   if (input$selectSp != "All")
-    nb_indiv_selectesp <- n_indiv_cam_esp2[aboncord$Species == y,]
+    nb_indiv_selectesp <- n_indiv_cam_esp2[n_indiv_cam_esp2 == y,]
   
   # Pour l'abondance :
   # On calcule d'abord le nb total d'individus toutes caméras confondues : 
@@ -729,7 +737,7 @@ donnees_cartes_abun <- reactive ({
   # On renomme la colonne Effcam
   nind_cam <- rename(nind_cam,"EffCam"="Individuals") 
   # On joint alors la colonne EffCam contenan le nb d'indiv/cam au d.f portant sur le nb d'individus d'une espèce sélectionnée
-  nb_indiv_cam_selectesp <- merge(nb_indiv_cam_selectesp,nind_cam,by="Camera",all.x=T)
+  nb_indiv_cam_selectesp <- merge(nb_indiv_selectesp,nind_cam,by="Camera",all.x=T)
   # On défini la colonne abuntot comme l'abondance relative totale de l'espèce sélectionnée pour une caméra donnée.
   nb_indiv_cam_selectesp$abuntot <- as.numeric((nb_indiv_cam_selectesp$Individuals))/tot*100
   # On défini la colonne abuncam comme l'abondance relative partielle (rapport non pas avec le nb tot d'individus, mais avec le nb 
@@ -897,6 +905,58 @@ donnees_cartes_abun <- reactive ({
  })
  
  
+ output$carte_abon_paresp <- renderPlot ({ 
+   # Calcul et affectation des données de l'emprise de la carte :
+   req(EPSG())
+   epsg <-EPSG()
+   req(donnees_cartes_abun())
+   richespe <- donnees_cartes_abun()
+   emmprise <- st_bbox(richespe)
+   xmin <- emmprise[1]
+   ymin <- emmprise[2]
+   xmax <- emmprise[3]
+   ymax <- emmprise[4]
+   
+   # Préparation de coeffs issus de l'emprise des coordonnées afin de produire une marge pour une meilleure visibilité des points et pour placer l'échelle et la flèche nord
+   diffx <- abs(abs(xmax)-abs(xmin))
+   diffy <- abs(abs(ymax)-abs(ymin))
+   diffx
+   diffy
+   coefx <- as.numeric(diffx/6)
+   coefy <- as.numeric(diffy/6)
+   coefx
+   coefy
+   
+   
+   carte3 <- ggplot() +
+     geom_sf(mapping=aes(size=abuntot, color=abuncam) ,data=richespe) +
+     coord_sf(crs = st_crs(epsg),xlim=c(xmin-coefx,xmax+coefx),ylim=c(ymin-coefy,ymax+coefy), datum = sf::st_crs(4326), expand = FALSE) +
+     scale_size_continuous(name = "Nb d'individus menacés observés", range=c(1,6)) +
+     scale_colour_gradientn(name = "Abondance (en%)", colours = terrain.colors(5)) + 
+     guides(size=FALSE) +
+     labs(title = "Cartographie de l'abondance relative des espèces",
+          subtitle = "Pour les espèces sélectionnées, et par caméra",
+          caption = "La taille des points est proportionnelle à la part de l'abondance relative totale de l'espèce, expliquée par son observation pour cette caméra",
+          x = "utm_x", y = "utm_y") +
+     theme_dark() +
+     theme(
+       legend.position = c(1.12, 0.5),
+       legend.direction = "vertical",
+       legend.key.size = unit(0.5, "cm"),
+       legend.key.width = unit(0.5,"cm"),
+       legend.title = element_text(color = "red", size = 9, face = "bold"),
+       legend.text = element_text(color = "red", size = 8),
+       plot.title = element_text(hjust = 0.5, size = 15, face = "bold"),
+       plot.subtitle = element_text(hjust = 0.5),
+       axis.title.x = element_text(color = "red", size = 10, face = "bold"),
+       axis.title.y = element_text(color = "red", size = 10, face = "bold")) +
+     annotation_scale(location = "tr", width_hint = 0.3) +
+     annotation_north_arrow(location = "tr", which_north = "true", 
+                            pad_x = unit(0.2, "cm"), pad_y = unit(0.6, "cm"),
+                            style = north_arrow_fancy_orienteering)
+   
+   carte3
+ })
 
 # Création du graphique d'activité en 24h en réactive de façon à pouvoir le télécharger
 
