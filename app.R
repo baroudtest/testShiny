@@ -158,12 +158,12 @@ tabPanel("Cacher la Note d'utilisateur",
                       h3("Indices :"),
                       br(),
                       h5("Pourcentage de détections nocturnes"),
-                      textOutput("indnoc"),
+                      tableOutput("indnoc"),
                       br(),
                       h5("Présence humaine"),
                       h6("(nombre d'hommes sur la durée en jours de l'inventaire"),
                       br(),
-                      textOutput("homme"))
+                      tableOutput("homme"))
                )
              ),
 ## Onglet "Analyse par espèce" (sélection de l'espèce et du site) ---------------------------------
@@ -313,6 +313,7 @@ server <- function(input, output, session) {
       
       }
     }
+    datf[c(r),] <-df[c(i),]
     datf
   })
   
@@ -433,41 +434,76 @@ output$downloadAccumul <- downloadHandler(
 
 
 # indice d'occurence nocturne
-output$indnoc <- renderText({
+output$indnoc <- renderTable({
   req(input$file)
   
-  ligne <- nrow(data())
+  sites <- aggregate(Individuals ~ Site, data = data(), sum)
+  sites <- sites$Site
+  nSites <- length(sites)
+Def <- data.frame(Sites = sites, indice =1)
+ligne <- nrow(data())
+  
+for(j in 1:nSites) {
+  z <- 0
+  LeSite <- sites[j]
+  
   b <- 0
   #comptage des détection nocturne en observant chaque lingne de Data
+ 
   for (i in 1:ligne) {
+    if (data()$Site[i]== LeSite) {
     heure <- factor(data()$Hour[c(i)])
     a <- lubridate::hms(as.character(heure))
     c <- hour(a)
     if (c[c(1)] > 18) { }
     else  if (c[c(1)] < 6) {b <- b + data()$Individuals[c(i)]}
+    z <- z +1
     
-  }
+    }
+}
   # nombre de détections nocturne sur nombre de détections totales
   
-  d <- (b / ligne) *100
-  d
+  d <- (b / z) *100
+  Def$indice[j] <- d
+}
+
+Def
 })
 
 # Indice de présence humaine
-output$homme <- renderText({
+output$homme <- renderTable({
   req(input$file)
   
-  # prend le nombre de lignes totale
+  sites <- aggregate(Individuals ~ Site, data = data(), sum)
+  sites <- sites$Site
+  nSites <- length(sites)
+  Def <- data.frame(Sites = sites, indice =1)
   ligne <- nrow(data())
-  b <- 0
+  
+ 
+  
+  for(j in 1:nSites) {
+    z <- 0
+    LeSite <- sites[j]
+    
+    b <- 0
+    
+    
   # compte le nombre de lignes correspondante à Homo sapiens
   for (i in 1:ligne) {
+    if (data()$Site[i]== LeSite) {
     if (data()$Species[c(i)] == "Homo sapiens")
-    {b <- b + data()$Individuals[c(i)]}
+    {b <- b + data()$Individuals[c(i)]
     
+    }
+    }
   }
+  
+  
   # différence entre le premier et le dernier jour d'inventaire en jours
-  donnees <- data()
+    #datEN <- subset(datEN,datEN$IUCN=="EN"|datEN$IUCN=="CR")
+    donnees <- data()
+    donnees <- subset(donnees, donnees$Site == LeSite)
   jour <- as.character(donnees$Date)
   jour <- dmy(jour)
   premier <- min(jour)
@@ -475,7 +511,9 @@ output$homme <- renderText({
   nbjour <- as.numeric(dernier - premier)
 # rapport du nombre de "Homo sapiens" sur le nombre de jours d'inventaires  
   d <- (b /nbjour)
-  d
+  Def$indice[j] <- d
+}
+Def
 })
 
 # message de chargement de table de données
