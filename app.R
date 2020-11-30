@@ -44,9 +44,13 @@ library(vegan)
 #install.packages("vegan")
 library(shinycssloaders)
 #install.packages("shinycssloaders")
+library(shinythemes)
+#install.packages("shinythemes")
 
 ## Agencement fluipage sur la page, outils d'interactions (uploader un fichier, case à cocher, sliders,...)----
 ui <- fluidPage(
+## Sélection du thème pour tester
+  themeSelector(),
 ## Contrôle sidebar -------------------------------------------
 sidebarLayout(
   sidebarPanel(
