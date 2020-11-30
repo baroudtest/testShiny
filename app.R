@@ -207,8 +207,11 @@ tabPanel("Cacher la Note d'utilisateur",
     tabPanel("Cartes",
              fluidRow(
                column(width = 12,
-                      withSpinner(plotOutput("test_shp")),
-                      withSpinner(plotOutput("carte_richesse_spe"))
+                      withSpinner(plotOutput("carte_richesse_spe")),
+                      br(),
+                      br(),
+                      withSpinner(plotOutput("carte_espèces_men")),
+                      withSpinner(plotOutput("test_shp"))
     )))
 
 ## Fermeture des onglets ----------------------------------------
@@ -621,60 +624,140 @@ output$downloadData <- downloadHandler(
 
 
 
-# Création d'une cartographie des abondances relatives par espèce ------------------------------
+# Création d'une cartographie des abondances et richesses spé + IUCN et présence d'espèce menacées ------------------------------
 
-# Traitement et préparation des données utiles aux cartes 
+# Traitement et préparation des données utiles aux cartes d'abondance et de richesse 
 
-EPSG <- reactive({input$epsg}) # On récupère l'epsg de manière réactive.
+EPSG <- reactive ({
+  as.numeric(input$epsg)
+})
 
-données_cartes_ab_rel_esp <- reactive({ 
+donnees_cartes_richesse_spe <- reactive({ 
   
   req(data())
-  data1 <- data()
+  dfinal <- data()
   # Création du jeu de données aggrégées sans coordonnées : 
-  aboncam <- aggregate(Individuals ~ Species+Camera, data = data1, sum)
-  tot <- sum(aboncam$Individuals)
-  aboncam$aboncam1 <- (aboncam$Individuals/tot)*100
-  aboncam2 <- aboncam
-  aboncam2
-})
-  # Création du jeu de données avec les coordonnées par jointure (objet data.frame)
-gps_cartes_richesse_spe <- reactive({
-  # On récupère les données :
+  # On aggrège d'abord les données des individus par espèce et par caméra !
+  n_indiv_cam_esp <- aggregate(Individuals ~ Species+Camera, data = dfinal, sum)
+  # Ensuite, dans une colonne individuals, on calcule le nombre d'espèce par caméra ! 
+  n_esp_cam <- aggregate(Individuals ~ Camera, data = n_indiv_cam_esp, length)
+  # On renomme chaque fois les champs issus de double aggregate par length, par un nom qui correspond mieux aux données obtenues
+  n_esp_cam <- rename(n_esp_cam,"Nbesp"="Individuals" )
+  
+  # On cherche à inclure le statut IUCN 
+  # On lie la table initiale à la table IUCN par l'espèce (ainsi on à le statut pour chaque espèce présente dans la liste)
+  req(IUCN())
+  IUCN <- IUCN()
+  datEN <- merge(dfinal,IUCN,by="Species",all.x=T)
+  # On ne garde dans un nouveau d.f que les individus qui ont un statut IUCN EN ou CR.
+  datEN <- subset(datEN,datEN$IUCN=="EN"|datEN$IUCN=="CR")
+  # On aggrège alors les nb d'indiv par espèce et par caméra.
+  EN <- aggregate(Individuals ~ Species + Camera, data = datEN, sum)
+  # On aggrège le nombre d'entrées par caméra pour obtenir le nb d'esp en danger (CR ou EN) par caméra.
+  ENCAM <- aggregate (Individuals ~ Camera, data = EN, length)
+  ENCAM <- rename(ENCAM,"NespEN"="Individuals" ) 
+  # On aggrège aussi le nb d'individus en danger obvervés par caméra (effectif en danger)
+  ENIND <- aggregate (Individuals ~ Camera, data= EN, sum)
+  ENIND <- rename(ENIND,"EffespEN"="Individuals")
+  
+  # On merge tout dans une table qui contient, pour chaque caméra, le nb d'espèce, 
+  # le nb d'espèce en danger (CR ou EN) et le nb d'individus observés de ces espèces en danger : 
+  Camdon <- merge(n_esp_cam,ENCAM,by=c("Camera","Camera"),all=T)
+  Camdon <- merge(Camdon,ENIND,by=c("Camera","Camera"),all=T)
+  
+  # On vire les N.A (créés quand aucune espèce EN ou CR n'est présente
+  # pour une caméra particulière) et on les remplace par 0 :
+  Camdon[is.na(Camdon)]<-0
+  
   req(coordcam())
-  coordocam <- coordcam() # On met le fichier d'entrée dans coordocam
-  req(données_cartes_ab_rel_esp)
-  aboncam3 <- données_cartes_ab_rel_esp()
+  infos_cam <- coordcam()
   
-  coordocam$name <- as.character(coordocam$name) # On s'assure que le nom de la camera est bien en character
-  coordocam1 = dplyr::select(coordocam,utm_x:utm_y,Camera = name) # On vire ce qui n'est pas utile, on ne garde que le nom de la camera (colonne name renommée Camera) et les coordonnées x et y utm
+  infos_cam$name <- as.character(infos_cam$name)
+  infos_cam1 = dplyr::select(infos_cam,utm_x:utm_y,Camera = name)
   
-  coordocam1$Camera=as.character(coordocam1$Camera)
-  aboncam3$Camera=as.character(aboncam3$Camera) # On transforme les valeurs des champs Camera en character afin de pouvoir effectuer la jointure
-  
-  aboncoordocam = left_join(aboncam3,coordocam1, by = c("Camera" = "Camera")) #jointure gauche des coordonnées !
-  
-  # Transformation en d.f de classe sf (d.f spatial), ajoute le champ geometry qui contient le couple de coordonnées, et retire les 2 champs de coordonnées simple:
-  req(EPSG())
-  epsg <-EPSG()
-  aboncoordocam1 <- st_as_sf(aboncoordocam,coords=c("utm_y","utm_x"),crs=epsg)
-  aboncoordocam1})
-  
-# Manip de sélection de l'espèce :
 
-gps_cartes_abon_paresp <- reactive({
-  req(gps_cartes_richesse_spe())
-  aboncord <- gps_cartes_richesse_spe()
+  infos_cam1$Camera=as.character(infos_cam1$Camera)
+  Camdon$Camera=as.character(Camdon$Camera) # On transforme les valeurs des champs Camera en character afin de pouvoir effectuer la jointure
+  
+  Camdon2 = left_join(Camdon,infos_cam1, by = c("Camera" = "Camera")) # C'est ainsi que l'on effectue la jointure,
+  # La fonction left_join permet de réaliser une jointure gauche, on va associer à chaque Camera de la variable Camdon les données des caméras d'infos_cam. Si un champ de la variable 
+  # infos_cam ne contenait pas de valeur pour une ou certaines des camera de Camdon, 
+  # on aurai des NO_DATA sur Camdon2 pour les lignes manquantes. De plus, s'il y avait des 
+  # données manquante de caméra sur Camdon1 (ex : pas de détection pour l'une des caméras présentes
+  # dans le jeu de données info_cam), la ligne ne serai pas reprise dans Camdon2 et on aurai aucune valeur/NO.DATA supplémentaire !
+  
+  # Il est également possible d'effectuer des jointures droites, ou des jointures internes
+  # Petite précision, on ne peut pas joindre deux couches sf comme celà ! -> pour une jointure gauche 
+  # par exemple, le premier élément peut être une couche sf, mais le 2nd doit obligatoirement être un d.f !
+  
+  # Conversion du .csv en objet sf ! (par défaut SCR = 4326/WGS84 pour ces coordonnées UTM) --------------------
+  
+  req(EPSG())
+  epsg <- EPSG()
+  
+  Camdon2=st_as_sf(Camdon2,coords=c("utm_y","utm_x"),crs=epsg)
+  
+  
+  Camdon2
+  
+})
+
+
+donnees_cartes_abun <- reactive ({
+  
+  req(data())
+  dfinal <- data()
+  
+  # On réalise également les valeurs à afficher pour la carte de l'onglet analyse par espèce : 
+  # On aggrège à nouveau les données du nb d'indiv par espèce et par caméra :
+  n_indiv_cam_esp2 <- aggregate(Individuals ~ Species+Camera, data = dfinal, sum)
+  
+  # Sélection de l'espèce qui nous intéresse :
   req(input$selectSp)
   y <- as.character(input$selectSp)
-  aboncoordocam2 <- aboncord
+  nb_indiv_selectesp <- n_indiv_cam_esp2
   # si "All" est encodé, graphique de toute les epsèces, si le nom d'une espèe est encodé, le prend en compte
   if (input$selectSp != "All")
-    aboncoordocam2 <- aboncord[aboncord$Species == y,]
-  aboncordocam2 # A modifier, pour le test seulement 
-})
+    nb_indiv_selectesp <- n_indiv_cam_esp2[aboncord$Species == y,]
   
- # Test carto polygone 
+  # Pour l'abondance :
+  # On calcule d'abord le nb total d'individus toutes caméras confondues : 
+  tot <- sum(dfinal$Individuals)
+  # On défini deux nlles colonnes abondance générale et abondance par rapport à la caméra:
+  # On commence par calculer le nb d'individus observés par caméra, dans un nouveau df
+  nind_cam <- aggregate(Individuals ~ Camera, data = dfinal, sum)
+  # On renomme la colonne Effcam
+  nind_cam <- rename(nind_cam,"EffCam"="Individuals") 
+  # On joint alors la colonne EffCam contenan le nb d'indiv/cam au d.f portant sur le nb d'individus d'une espèce sélectionnée
+  nb_indiv_cam_selectesp <- merge(nb_indiv_cam_selectesp,nind_cam,by="Camera",all.x=T)
+  # On défini la colonne abuntot comme l'abondance relative totale de l'espèce sélectionnée pour une caméra donnée.
+  nb_indiv_cam_selectesp$abuntot <- as.numeric((nb_indiv_cam_selectesp$Individuals))/tot*100
+  # On défini la colonne abuncam comme l'abondance relative partielle (rapport non pas avec le nb tot d'individus, mais avec le nb 
+  # d'indiv pour cette caméra)
+  # de l'espèce sélectionnée pour une caméra donnée.
+  nb_indiv_cam_selectesp$abuncam <- as.numeric(nb_indiv_cam_selectesp$Individuals)/as.numeric(nb_indiv_cam_selectesp$EffCam)*100
+  
+  # On recommmence la manip précédente pour la jointure des coordonnées et transformation en df.sf :
+  req(coordcam())
+  infos_cam <- coordcam()
+  infos_cam$name <- as.character(infos_cam$name)
+  infos_cam1 = dplyr::select(infos_cam,utm_x:utm_y,Camera = name)
+  
+  infos_cam1$Camera=as.character(infos_cam1$Camera)
+  nb_indiv_cam_selectesp$Camera=as.character(nb_indiv_cam_selectesp$Camera) # On transforme les valeurs des champs Camera en character afin de pouvoir effectuer la jointure
+  
+  nb_indiv_cam_selectesp2 = left_join(nb_indiv_cam_selectesp,infos_cam1, by = c("Camera" = "Camera"))
+  
+  req(EPSG())
+  epsg <- EPSG()
+  nb_indiv_cam_selectesp2=st_as_sf(nb_indiv_cam_selectesp2,coords=c("utm_y","utm_x"),crs=epsg)
+  
+  nb_indiv_cam_selectesp2
+  
+})
+
+  
+# PlotOutput polygone : ---------------------------------------------------------------
 
  output$test_shp <- renderPlot ({
    req(EPSG())
@@ -709,9 +792,9 @@ gps_cartes_abon_paresp <- reactive({
  output$carte_richesse_spe <- renderPlot ({ 
    # Calcul et affectation des données de l'emprise de la carte :
    req(EPSG())
-   epsg <-EPSG()
-   req(gps_cartes_richesse_spe())
-   richespe <- gps_cartes_richesse_spe()
+   epsg <- EPSG()
+   req(donnees_cartes_richesse_spe())
+   richespe <- donnees_cartes_richesse_spe()
    emmprise <- st_bbox(richespe)
    xmin <- emmprise[1]
    ymin <- emmprise[2]
@@ -730,14 +813,14 @@ gps_cartes_abon_paresp <- reactive({
    
    
    carte1 <- ggplot() +
-     geom_sf(mapping=aes(size=aboncam1, color=aboncam1) ,data=richespe) +
+     geom_sf(mapping=aes(size=Nbesp, color=Nbesp) ,data=richespe) +
      coord_sf(crs = st_crs(epsg),xlim=c(xmin-coefx,xmax+coefx),ylim=c(ymin-coefy,ymax+coefy), datum = sf::st_crs(4326), expand = FALSE) +
-     scale_size_continuous(name = "Abondance (en %)", range=c(1,6)) +
-     scale_colour_gradientn(name = "Abondance (en %)", colours = terrain.colors(5)) + 
+     scale_size_continuous(name = "Richesse spécifique", range=c(1,6)) +
+     scale_colour_gradientn(name = "Richesse spécifique", colours = terrain.colors(5)) + 
      guides(size=FALSE) +
      labs(title = "Cartographie de la richesse spécifique",
           subtitle = "Toutes caméras confondues",
-          caption = "La taille des points est proportionnelle à la richesse spécifique",
+          caption = "La taille des points est également proportionnelle à la richesse spécifique",
           x = "utm_x", y = "utm_y") +
      theme_dark() +
      theme(
@@ -759,6 +842,61 @@ gps_cartes_abon_paresp <- reactive({
    carte1
      })
 
+ 
+ output$carte_espèces_men <- renderPlot ({ 
+   # Calcul et affectation des données de l'emprise de la carte :
+   req(EPSG())
+   epsg <-EPSG()
+   req(donnees_cartes_richesse_spe())
+   richespe <- donnees_cartes_richesse_spe()
+   emmprise <- st_bbox(richespe)
+   xmin <- emmprise[1]
+   ymin <- emmprise[2]
+   xmax <- emmprise[3]
+   ymax <- emmprise[4]
+   
+   # Préparation de coeffs issus de l'emprise des coordonnées afin de produire une marge pour une meilleure visibilité des points et pour placer l'échelle et la flèche nord
+   diffx <- abs(abs(xmax)-abs(xmin))
+   diffy <- abs(abs(ymax)-abs(ymin))
+   diffx
+   diffy
+   coefx <- as.numeric(diffx/6)
+   coefy <- as.numeric(diffy/6)
+   coefx
+   coefy
+   
+   
+   carte2 <- ggplot() +
+     geom_sf(mapping=aes(size=EffespEN, color=NespEN) ,data=richespe) +
+     coord_sf(crs = st_crs(epsg),xlim=c(xmin-coefx,xmax+coefx),ylim=c(ymin-coefy,ymax+coefy), datum = sf::st_crs(4326), expand = FALSE) +
+     scale_size_continuous(name = "Nb d'individus menacés observés", range=c(1,6)) +
+     scale_colour_gradientn(name = "Nb d'espèces menacées", colours = terrain.colors(5)) + 
+     guides(size=FALSE) +
+     labs(title = "Cartographie des observations d'espèces au statut IUCN 'EN' et/ou 'CR'",
+          subtitle = "Toutes caméras confondues",
+          caption = "La taille des points est proportionnelle à l'effectif des espèces menacées observées pour ces caméras",
+          x = "utm_x", y = "utm_y") +
+     theme_dark() +
+     theme(
+       legend.position = c(1.12, 0.5),
+       legend.direction = "vertical",
+       legend.key.size = unit(0.5, "cm"),
+       legend.key.width = unit(0.5,"cm"),
+       legend.title = element_text(color = "red", size = 9, face = "bold"),
+       legend.text = element_text(color = "red", size = 8),
+       plot.title = element_text(hjust = 0.5, size = 15, face = "bold"),
+       plot.subtitle = element_text(hjust = 0.5),
+       axis.title.x = element_text(color = "red", size = 10, face = "bold"),
+       axis.title.y = element_text(color = "red", size = 10, face = "bold")) +
+     annotation_scale(location = "tr", width_hint = 0.3) +
+     annotation_north_arrow(location = "tr", which_north = "true", 
+                            pad_x = unit(0.2, "cm"), pad_y = unit(0.6, "cm"),
+                            style = north_arrow_fancy_orienteering)
+   
+   carte2
+ })
+ 
+ 
 
 # Création du graphique d'activité en 24h en réactive de façon à pouvoir le télécharger
 
