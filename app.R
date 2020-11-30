@@ -46,6 +46,8 @@ library(shinycssloaders)
 #install.packages("shinycssloaders")
 library(shinythemes)
 #install.packages("shinythemes")
+library(data.table)
+#install.packages("data.table")
 
 ## Agencement fluipage sur la page, outils d'interactions (uploader un fichier, case à cocher, sliders,...)----
 ui <- fluidPage(
@@ -293,43 +295,93 @@ server <- function(input, output, session) {
     #remplacer cephalophe par cephalophus
     library(doBy)
     df$Species <- recodeVar(df$Species,"Cephalophe spp.","Cephalophus spp.")
-    #Regrouper repetitions (30 min)
-    datf <- data.frame(1,2,3,4,5,6,7)
     
-    k <- colnames(df)
-    colnames(datf) <- k 
-    l <- nrow(df)
-    s <- 1
-    r <- 1
-    # boucle lisant chaque ligne et la comparant avec la suivante, si plus de 30 min écoulées, écrit la ligne,
-    # si moins de 30 min écoulé, observe l'espèce, si elle sont égales, passe la ligne sans écrire la deuxième ligne
-    for (i in 1:l) {
+    # Tri ici : 
+    
+    # On souhaite retirer des entrées qui sont des répétitions. Comme le fichier de base n'est pas
+    # classé chronologiquement, il faut le faire manuellement. Pour celà, afin que les données
+    # des différents sites ne se mélangent pas pendant le calcul probable de répétitions temporelles,
+    # il est nécessaire de séparer le d.f en parties correspondant aux données respectives de chaque site.
+    
+    # On sépare en créant une largelist contenant des d.f au nom des facteurs.
+    LargeList <- split(df,df$Camera)
+    # Pour repérer les sites à trier chronologiquement dans un calcul en boucle plus loin,
+    # on fait un facteur selon le nom de site, et on obtient le nombre de niveaux de ce facteur (2 pour les 2 sites donc).
+    
+    ncam <- df$Camera
+    facteurs <- factor(ncam)
+    niveaux <- nlevels(facteurs)
+    # Avant de lancer la boucle, on initie une nouvelle liste dans laquelle vont être stockés les d.f
+    # de chaque niveaux/sites, mais cette fois-ci triés dans l'ordre chronologique
+    Y <- list()
+    
+    # On lance la boucle pour chaque niveaux j du facteur dfsite (pour chaque site)
+    for (j in 1:as.numeric(niveaux)) {
+      # On crée un d.f avec 8 colonnes (Une en plus pour les données compilées "Date&Hour") nommées arbitrairement (nommées automatiquement de X1 à X8)
+      datf <- data.frame(1,2,3,4,5,6,7,8)
+      # Ce d.f va permettre de stocker les lignes retenues et sera lui même stocké dans la liste Y au passage de la boucle au niveau suivant.
+      # On extrait de la largelist le df qui concerne un site particulier
+      dfSite <- as.data.frame(LargeList[[j]])
+      # On crée la colonne YMDHMS qui regroupe "Date&Hour" afin d'effectuer un classement chronologiqu selon une seule colonne :
+      dfSite$YMDHMS <- paste(dfSite$Date,dfSite$Hour,sep="_")
+      # On reclasse les données de chaque df (pour chaque site donc) par ordre chronologique 
+      # On commence d'abord par définir la nlle colonne comme un facteur et un character pour le traitement lubridate
+      dfSite$YMDHMS <- as.character(dfSite$YMDHMS)
+      # Avec lubridate, on défini les valeurs de la nlle colonne comme des POSIXct (au format dmy_hms = DayMonthYear_HourMinSec) pour effectuer des opérations dessus. 
+      dfSite$YMDHMS <- lubridate::dmy_hms(dfSite$YMDHMS)
+      # On trie le fichier chronologiquement avec arrange() et on met tout dans un nouveau data.frame trié, on est prêt pour les calculs !
+      dfSite_trie <- dplyr::arrange(dfSite, YMDHMS)
       
-      if (i < l) {s <- i +1 }
-  
-      # Encodage des heures des deux lignes respectives
-      heurea <- factor(df$Hour[c(i)])
-      heureb <- factor(df$Hour[c(s)])
+      # On prépare maintenant la boucle de tri des données qui vient après (selon des critères de différence interlignes entre les moments de prise en note des obs et entre les noms d'espèces)
+      # On met les noms de colonne du df trié chronologiquement dans un vecteur character k
+      k <- colnames(dfSite_trie)
+      # On attribue les noms de colonnes stockés dans k au nouveau fichier datf : Remplacement des X1:X7 par les noms de col de df
+      colnames(datf) <- k 
+      # On crée une varbale l dans laquelle on met le nombre de lignes du df trié chronologiquement
+      l <- nrow(dfSite_trie)
+      # On crée 2 variables s et r dans lesquelles on met chaque fois la valeur 1 (on initie les valeurs qui entrent dans la boucle qui arrive)
+      s <- 1
+      r <- 1
+      # On crée une boucle lisant chaque ligne et la comparant avec la suivante, si plus de 30 min écoulées, écrit la ligne,
+      # si moins de 30 min écoulé, observe l'espèce, si elle sont égales, passe la ligne sans écrire la deuxième ligne
       
-      a <- lubridate ::hms(as.character(heurea))
-      b <- lubridate ::hms(as.character(heureb))
-      
-      #calcul de la différence
-      g <- as.duration(b-a)
-      
-      # vérification du critère temps
-      if (g > 1800)  {datf[c(r),] <- df[c(i),]
-      
-      r <- r+1} # avancement à la prochaine ligne du nouveau dataframe
-      #vérification du critère espèce 
-      else if (df$Species[c(i)] == df$Species[c(s)]) {}
-      else {datf[c(r),] <- df[c(i),]
-      r <- r+1
-      
-      }
-    }
-    datf[c(r),] <-df[c(i),]
-    datf
+      # Pour un nombre i compris de 1 à l (donc de 1 à nligne (pour un site donné) après nettoyage)
+      for (i in 1:l) {
+        
+        #Si i<l (donc tant qu'on à pas atteint la dernière ligne), on met dans s la valeur de i + 1 :
+        if (i < l) {s <- i + 1}
+        
+        #On stoque également les heures indiquées dans la colonne YMDHMS dans les variables i et s, la variable s étant toujours devant la i ! 
+        heurea <- dfSite_trie$YMDHMS[c(i)]
+        heureb <- dfSite_trie$YMDHMS[c(s)]
+        
+        
+        # Une fois au bon format, grâce à lubridate, on peut faire des calculs sur les heures. 
+        # Ici, on calcule chaque fois l'écart de temps (secondes car format POSIXct) qui sépare deux lignes successives (pour rappel, classées chronologiquement à cet effet au préalable)  
+        
+        g <- as.duration(heureb-heurea)
+        
+        # vérification du critère temps (si la durée entre 2 lignes dépasse 1800 sec = 30minutes, on écrit la donnée de la ligne i à la ligne r d'un nouveau data.frame : datf)
+        # Cette ligne r correspond à la ligne i : Rappel; on initie r à 1 au début, en même temps que i.
+        # Dans le cas ou plus de 30 minutes séparent les lignes, on écrit la ligne dans le nouveau data.frame.
+        if (g > 1800)  { datf[c(r),] <- dfSite_trie[c(i),]
+        # On passe alors à la ligne suivante après qu'il y ait eu écriture.
+        r <- r+1}
+        #vérification du critère espèce 
+        # Sinon, si la durée entre les deux obs <30min, et que l'espèce à la ligne suivante correspond à celle à la ligne précédente, on n'écrit rien !
+        else if (dfSite_trie$Species[c(i)] == dfSite_trie$Species[c(s)]) {}
+        # Dans le dernier cas (donc l'espèce ligne suivante est différente de la précédente ET il y a moins de 30 min entre les obs)
+        else {datf[c(r),] <- dfSite_trie[c(i),] # On écrit la ligne
+        r <- r+1 # Puis on passe à la ligne r suivante !
+        }
+      } 
+      # Enfin on réaffiche les df dans une largelist, pour compilation juste après
+      Y[[j]] <- datf }
+    # compilation des objets de la liste Y dans le d.f dfinal avec l'outil rbindlist (package data.table)
+    dfinal <- rbindlist(Y)
+    
+    dfinal
+    
   })
   
 # Traitement des données de la partie communauté --------------------------------------
