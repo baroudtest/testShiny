@@ -208,6 +208,9 @@ tabPanel("Cacher la Note d'utilisateur",
                       downloadButton("downloadData", "Download"),
                       br(),
                                  withSpinner(tableOutput("ab_rel")),
+                      helpText("* Ces NA correspondent aux espèces classifiées « Not Applicable (regional category) » par l'IUCN.
+                               Les autres NA de la liste correspondent aux espèces ne figurant pas dans notre base de données
+                               (non reprises ou dont le nom possède un format incorrect)."),
                       h3("Graphique des observation de l'espèce reprise par heure"),
                     
                       withSpinner(plotOutput("graph24h")),
