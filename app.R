@@ -78,14 +78,6 @@ sidebarLayout(
     div(textOutput("erreur6"), style = "color:red"),
     div(textOutput("erreur7"), style = "color:red"),
     div(textOutput("erreur8"), style = "color:red"),
-    
-    br(),
-    h5("La liste ci-dessous reprend les espèces dans votre jeu de données dont le nom ne possède pas le format correct 
-    ou qui ne se trouvent pas dans notre base de données. Veuillez vous référer aux noms scientifiques présents sur le site
-    de l'IUCN, remplacez-les dans votre jeu de données et rechargez vos fichiers. Les analyses fournies restent valables 
-    mais les espèces restantes dans la liste ci-dessous ne pourront pas être prises en compte dans le recensement et la 
-    répartition des espèces menacées."),
-    div(tableOutput("verif_noms"), style = "color:red"),
     br(),
    
     fileInput("infocam",h2("Informations de localisation des caméras")),
@@ -302,9 +294,6 @@ server <- function(input, output, session) {
     df <- df[-no_sp, ]
     indet <- which(df$Species == "indetermined")
     df <- df[-indet, ]
-    #remplacer cephalophe par cephalophus
-    library(doBy)
-    df$Species <- recodeVar(df$Species,"Cephalophe spp.","Cephalophus spp.")
     
     # Tri ici : 
     
@@ -393,7 +382,41 @@ server <- function(input, output, session) {
     dfinal
     
   })
+
+####################################################################################
+## message d'erreur ==> verification des noms d'especes
   
+  noms <- reactive({
+    req(input$status)
+    req(input$file)
+    
+    verif_noms <- merge(data(),IUCN(),all.x=T)
+    verif_noms <- unique(verif_noms[which(is.na(verif_noms$IUCN)),"Species"])
+    verif_noms
+    #liste <- as.character(verif_noms[1])
+    #for(i in 2:length(verif_noms)){
+    #  liste <- paste(liste,verif_noms[i],sep=", ")
+    #}
+    #liste
+  })
+  
+  
+  observeEvent(input$file, {
+    showModal(modalDialog(
+      title = "Vérification des noms d'espèces",
+      paste("L'application ne reconnait pas les espèces suivantes : ",noms(),". 
+      Cela est dû au format incorrect du nom de l'espèce dans votre jeu de données. 
+      Veuillez vous référer aux noms scientifiques présents sur le site de l'IUCN, remplacez-les dans 
+      votre jeu de données et rechargez vos fichiers. Si le problème persiste après avoir modifié les noms, 
+      cela signifie que l'espèce n'est pas présente dans notre base de données. 
+      Vous pouvez alors l'ajouter vous même dans le fichier statuts.csv et relancer l'application. 
+      Les analyses fournies restent valables, mais les espèces restantes dans cette liste ne pourront pas 
+      être prises en compte dans le recensement et la répartition des espèces menacées.", sep=""),
+      footer = modalButton("Fermer")
+    ))
+  })
+####################################################################################
+    
 # Traitement des données de la partie communauté --------------------------------------
 # table des informations sur les communautés par site 
 tableCom <- reactive({
@@ -1286,28 +1309,6 @@ output$erreur8 <- renderText({
   err()[8]
 })
 
-
-
-####################################################################################
-## message d'erreur ==> verification des noms d'especes
-
-noms <- reactive({
-  req(input$status)
-  req(input$file)
-  
-  verif_noms <- merge(data(),IUCN(),all.x=T)
-  unique(verif_noms[which(is.na(verif_noms$IUCN)),"Species"])
-  
-})
-
-# encodage des texte en output
-
-output$verif_noms <- renderTable({
-  req(input$status)
-  req(input$file)
-  noms()
-})
-####################################################################################
 
 
 }
