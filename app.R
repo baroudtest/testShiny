@@ -300,13 +300,13 @@ server <- function(input, output, session) {
     
     # On souhaite retirer des entrées qui sont des répétitions. Comme le fichier de base n'est pas
     # classé chronologiquement, il faut le faire manuellement. Pour celà, afin que les données
-    # des différents sites ne se mélangent pas pendant le calcul probable de répétitions temporelles,
-    # il est nécessaire de séparer le d.f en parties correspondant aux données respectives de chaque site.
+    # des différents sites/caméras ne se mélangent pas pendant le calcul probable de répétitions temporelles,
+    # il est nécessaire de séparer le d.f en parties correspondant aux données respectives de chaque caméra.
     
     # On sépare en créant une largelist contenant des d.f au nom des facteurs.
     LargeList <- split(df,df$Camera)
     # Pour repérer les sites à trier chronologiquement dans un calcul en boucle plus loin,
-    # on fait un facteur selon le nom de site, et on obtient le nombre de niveaux de ce facteur (2 pour les 2 sites donc).
+    # on fait un facteur selon le champ Caméra, et on obtient le nombre de niveaux de ce facteur (36 pour les 36 caméras donc).
     
     ncam <- df$Camera
     facteurs <- factor(ncam)
@@ -315,17 +315,17 @@ server <- function(input, output, session) {
     # de chaque niveaux/sites, mais cette fois-ci triés dans l'ordre chronologique
     Y <- list()
     
-    # On lance la boucle pour chaque niveaux j du facteur dfsite (pour chaque site)
+    # On lance la boucle pour chaque niveaux j du facteur "niveaux" (pour chaque caméra donc)
     for (j in 1:as.numeric(niveaux)) {
-      # On crée un d.f avec 8 colonnes (Une en plus pour les données compilées "Date&Hour") nommées arbitrairement (nommées automatiquement de X1 à X8)
+      # On crée un d.f avec 8 colonnes (Une en plus pour les données compilées "Date&Hour" qui viennent après) nommées arbitrairement (nommées automatiquement de X1 à X8)
       datf <- data.frame(1,2,3,4,5,6,7,8)
       # Ce d.f va permettre de stocker les lignes retenues et sera lui même stocké dans la liste Y au passage de la boucle au niveau suivant.
-      # On extrait de la largelist le df qui concerne un site particulier
+      # On extrait de la largelist le df qui concerne une caméra particulière
       dfSite <- as.data.frame(LargeList[[j]])
-      # On crée la colonne YMDHMS qui regroupe "Date&Hour" afin d'effectuer un classement chronologiqu selon une seule colonne :
+      # On crée la colonne YMDHMS qui regroupe "Date&Hour" afin d'effectuer un classement chronologique selon une seule colonne :
       dfSite$YMDHMS <- paste(dfSite$Date,dfSite$Hour,sep="_")
       # On reclasse les données de chaque df (pour chaque site donc) par ordre chronologique 
-      # On commence d'abord par définir la nlle colonne comme un facteur et un character pour le traitement lubridate
+      # On commence d'abord par définir la nlle colonne comme un character pour le traitement lubridate
       dfSite$YMDHMS <- as.character(dfSite$YMDHMS)
       # Avec lubridate, on défini les valeurs de la nlle colonne comme des POSIXct (au format dmy_hms = DayMonthYear_HourMinSec) pour effectuer des opérations dessus. 
       dfSite$YMDHMS <- lubridate::dmy_hms(dfSite$YMDHMS)
