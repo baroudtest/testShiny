@@ -521,7 +521,7 @@ for(j in 1:nSites) {
     if (data()$Site[i]== LeSite) {
     heure <- factor(data()$Hour[c(i)])
     a <- lubridate::hms(as.character(heure))
-    c <- hour(a)
+    c <- lubridate::hour(a)
     if (c[c(1)] > 18) { }
     else  if (c[c(1)] < 6) {b <- b + data()$Individuals[c(i)]}
     z <- z +1
@@ -1028,7 +1028,7 @@ donnees_cartes_abun <- reactive ({
   heurea <- df$Hour
   a <- lubridate ::hms(as.character(heurea))
   
-  hour_of_event <- hour(a)
+  hour_of_event <- lubridate::hour(a)
   
   eventdata <- data.frame(datetime = df$Date, eventhour = hour_of_event)
   
