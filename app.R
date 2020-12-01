@@ -80,6 +80,13 @@ sidebarLayout(
     div(textOutput("erreur8"), style = "color:red"),
     div(textOutput("erreur9"), style = "color:red"),
     br(),
+    h5("La liste ci-dessous reprend les espèces dans votre jeu de données dont le nom ne possède pas le format correct 
+    ou qui ne se trouvent pas dans notre base de données. Veuillez vous référer aux noms scientifiques présents sur le site
+    de l'IUCN, remplacez-les dans votre jeu de données et rechargez vos fichiers. Les analyses fournies restent valables 
+    mais les espèces restantes dans la liste ci-dessous ne pourront pas être prises en compte dans le recensement et la 
+    répartition des espèces menacées."),
+    div(tableOutput("verif_noms"), style = "color:red"),
+    br(),
    
     fileInput("infocam",h2("Informations de localisation des caméras")),
     div(textOutput("fichier2"), style = "color:green"),
@@ -1231,7 +1238,26 @@ output$erreur9 <- renderText({
   err()[9]
 })
 
+####################################################################################
+## message d'erreur ==> verification des noms d'especes
 
+noms <- reactive({
+  req(input$status)
+  req(input$file)
+  
+  verif_noms <- merge(data(),IUCN(),all.x=T)
+  unique(verif_noms[which(is.na(verif_noms$IUCN)),"Species"])
+  
+})
+
+# encodage des texte en output
+
+output$verif_noms <- renderTable({
+  req(input$status)
+  req(input$file)
+  noms()
+})
+####################################################################################
 
 
 }
