@@ -78,7 +78,7 @@ sidebarLayout(
     div(textOutput("erreur6"), style = "color:red"),
     div(textOutput("erreur7"), style = "color:red"),
     div(textOutput("erreur8"), style = "color:red"),
-    div(textOutput("erreur9"), style = "color:red"),
+    
     br(),
     h5("La liste ci-dessous reprend les espèces dans votre jeu de données dont le nom ne possède pas le format correct 
     ou qui ne se trouvent pas dans notre base de données. Veuillez vous référer aux noms scientifiques présents sur le site
@@ -208,8 +208,8 @@ tabPanel("Cacher la Note d'utilisateur",
                       downloadButton("downloadData", "Download"),
                       br(),
                                  withSpinner(tableOutput("ab_rel")),
-                      h3("Cacher/Dérouler le graphique"),
-                      checkboxInput("affigraphique", "Afficher", value = TRUE),
+                      h3("Graphique des observation de l'espèce reprise par heure"),
+                    
                       withSpinner(plotOutput("graph24h")),
                                   downloadButton("downloadGraph", "Download Graph"),
                       withSpinner(plotOutput("carte_abon_paresp")),
@@ -1054,7 +1054,6 @@ donnees_cartes_abun <- reactive ({
   
 # Encodage du graphique réactif en output de manière à l'afficher
 output$graph24h <- renderPlot({
-  req(input$affigraphique == TRUE)
 req(input$file)
   graph24()
 })
@@ -1084,7 +1083,7 @@ output$downloadGraph <- downloadHandler(
 err <- reactive({
   req(input$file)
   
-  LengthOk <- 0
+ 
   SpOk <- 0
   CamOk <- 0
   SiOk <- 0
@@ -1095,10 +1094,7 @@ err <- reactive({
   x <- c(1,2,3,4,5,6,7)
   
   x <- names(data())
-  if (length(x) == 7) { LengthOk <- 1 }
-   
-  if (LengthOk == 1) {LOk <- "Length Ok"}
-  else { LOk <- "La feuille de donnée contient trop de colonnes"} 
+ 
   
   if (x[1] == "Species") {SpOk <- 1 }
   else if (x[2] == "Species") {SpOk <-1 }
@@ -1108,7 +1104,7 @@ err <- reactive({
   else if (x[6] == "Species") {SpOk <-1 }
   else if (x[7] == "Species") {SpOk <-1 }
   
-  if (SpOk == 1) {SOk <- "Species Ok"}
+  if (SpOk == 1) {SOk <- ""}
   else { SOk <- "Erreur, impossible de trouver la colonne 'Species'. vérifiez la syntaxe du jeu de donnée"}
   
   if (x[1] == "Camera") {CamOk <- 1 }
@@ -1119,7 +1115,7 @@ err <- reactive({
   else if (x[6] == "Camera") {CamOk <-1 }
   else if (x[7] == "Camera") {CamOk <-1 }
   
-  if (CamOk == 1) {COk <- "Camera Ok"}
+  if (CamOk == 1) {COk <- ""}
   else { COk <- "Erreur, impossible de trouver la colonne 'Camera'. vérifiez la syntaxe du jeu de donnée"}
   
   if (x[1] == "Site") {SiOk <- 1 }
@@ -1130,7 +1126,7 @@ err <- reactive({
   else if (x[6] == "Site") {SiOk <-1 }
   else if (x[7] == "Site") {SiOk <-1 }
   
-  if (SiOk == 1) {StOk <- "Site Ok"}
+  if (SiOk == 1) {StOk <- ""}
   else { StOk <- "Erreur, impossible de trouver la colonne 'Site'. vérifiez la syntaxe du jeu de donnée"}
   
   if (x[1] == "Individuals") {InOk <- 1 }
@@ -1141,7 +1137,7 @@ err <- reactive({
   else if (x[6] == "Individuals") {InOk <-1 }
   else if (x[7] == "Individuals") {InOk <-1 }
 
-  if (InOk == 1) {IOk <- "Individuals Ok"}
+  if (InOk == 1) {IOk <- ""}
   else { IOk <- "Erreur, impossible de trouver la colonne 'Individuals'. vérifiez la syntaxe du jeu de donnée"}
   
   if (x[1] == "Date") {DaOk <- 1 }
@@ -1152,7 +1148,7 @@ err <- reactive({
   else if (x[6] == "Date") {DaOk <-1 }
   else if (x[7] == "Date") {DaOk <-1 }
   
-  if (DaOk == 1) {DOk <- "Data Ok"}
+  if (DaOk == 1) {DOk <- ""}
   else { DOk <- "Erreur, impossible de trouver la colonne 'Date'. vérifiez la syntaxe du jeu de donnée"}
 
   
@@ -1164,7 +1160,7 @@ err <- reactive({
   else if (x[6] == "Hour") {HoOk <-1 }
   else if (x[7] == "Hour") {HoOk <-1 }
   
-  if (HoOk == 1) {HOk <- "Hour Ok"}
+  if (HoOk == 1) {HOk <- ""}
   else { HOk <- "Erreur, impossible de trouver la colonne 'Hour'. vérifiez la syntaxe du jeu de donnée"}
   
   if (x[1] == "Image1") {ImOk <- 1 }
@@ -1175,10 +1171,10 @@ err <- reactive({
   else if (x[6] == "Image1") {ImOk <-1 }
   else if (x[7] == "Image1") {ImOk <-1 }
   
-  if (ImOk == 1) {IgOk <- "Image Ok"}
+  if (ImOk == 1) {IgOk <- ""}
   else { IgOk <- "Erreur, impossible de trouver la colonne 'Image'. vérifiez la syntaxe du jeu de donnée"}
 
-err <- c(LOk, SOk, DOk, COk, StOk, IOk, DOk, HOk, IgOk)
+err <- c(SOk, DOk, COk, StOk, IOk, DOk, HOk, IgOk)
 err
   
 })
@@ -1233,10 +1229,6 @@ output$erreur8 <- renderText({
 })
 
 
-output$erreur9 <- renderText({
-  req(input$file)
-  err()[9]
-})
 
 ####################################################################################
 ## message d'erreur ==> verification des noms d'especes
