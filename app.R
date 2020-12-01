@@ -359,7 +359,7 @@ server <- function(input, output, session) {
         # Une fois au bon format, grâce à lubridate, on peut faire des calculs sur les heures. 
         # Ici, on calcule chaque fois l'écart de temps (secondes car format POSIXct) qui sépare deux lignes successives (pour rappel, classées chronologiquement à cet effet au préalable)  
         
-        g <- as.duration(heureb-heurea)
+        g <- lubridate::as.duration(heureb-heurea)
         
         # vérification du critère temps (si la durée entre 2 lignes dépasse 1800 sec = 30minutes, on écrit la donnée de la ligne i à la ligne r d'un nouveau data.frame : datf)
         # Cette ligne r correspond à la ligne i : Rappel; on initie r à 1 au début, en même temps que i.
