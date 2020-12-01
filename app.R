@@ -829,7 +829,7 @@ donnees_cartes_abun <- reactive ({
   
 # PlotOutput polygone : ---------------------------------------------------------------
 
- output$test_shp <- renderPlot ({
+ test_shp1 <- reactive ({
    req(EPSG())
    epsg <-EPSG()
    req(SHP())
@@ -859,7 +859,7 @@ donnees_cartes_abun <- reactive ({
  
  # Test carto richesse spé :
  
- output$carte_richesse_spe <- renderPlot ({ 
+ carte_richesse_spe1 <- reactive ({ 
    # Calcul et affectation des données de l'emprise de la carte :
    req(EPSG())
    epsg <- EPSG()
@@ -913,7 +913,7 @@ donnees_cartes_abun <- reactive ({
      })
 
  
- output$carte_espèces_men <- renderPlot ({ 
+ carte_espèces_men1 <- reactive ({ 
    # Calcul et affectation des données de l'emprise de la carte :
    req(EPSG())
    epsg <-EPSG()
@@ -967,7 +967,7 @@ donnees_cartes_abun <- reactive ({
  })
  
  
- output$carte_abon_paresp <- renderPlot ({ 
+ carte_abon_paresp1 <- reactive ({ 
    # Calcul et affectation des données de l'emprise de la carte :
    req(EPSG())
    epsg <-EPSG()
@@ -1020,7 +1020,62 @@ donnees_cartes_abun <- reactive ({
    carte3
  })
 
-# Création du graphique d'activité en 24h en réactive de façon à pouvoir le télécharger
+ # Gestion des affichages des cartes : 
+ 
+
+output$carte_richesse_spe <- renderPlot({req(carte_richesse_spe1())
+  carte_richesse_spe1()})
+
+output$carte_espèces_men <- renderPlot({req(carte_espèces_men1()) 
+  carte_espèces_men1()})
+
+output$carte_abon_paresp <- renderPlot({req(carte_abon_paresp1()) 
+  carte_abon_paresp1()})
+
+# Gestion des téléchargements des cartes : 
+
+# Carte des richesses spécifiques
+
+output$downloadMap1 <- downloadHandler( 
+  # filename pour définir le nom par défaut du fichier produit, Content pour choisir le graph dans l'image
+  filename = function() {paste("Map_richesspe", '.png', sep='') },
+  content = function(file) {
+    
+    ggsave(file,plot=carte_richesse_spe1(),width=18,height = 6)
+    
+  }
+  
+)
+
+# Carte des espèces menacées :
+
+
+output$downloadMap2 <- downloadHandler(
+  # filename pour définir le nom par défaut du fichier produit, Content pour choisir le graph dans l'image
+  filename = function() {paste("Map_IUCN",'.png', sep='') },
+  content = function(file) {
+    
+    ggsave(file,plot=carte_espèces_men1(),width=18,height = 6)
+    
+  }
+  
+)
+
+# Carte des abondances par espèces : 
+
+
+output$downloadMap3 <- downloadHandler(
+  # filename pour définir le nom par défaut du fichier produit, Content pour choisir le graph dans l'image
+  filename = function() {paste("Map_abund",input$selectSp, '.png', sep=' ') },
+  content = function(file) {
+    
+    ggsave(file,plot=carte_abon_paresp1(),width=18,height = 6)
+  }
+  
+)
+
+ 
+# Création du graphique d'activité en 24h en réactive de façon à pouvoir le télécharger -----------------
 
   graph24 <- reactive ({
 # récupérer l'espèce encodée 
