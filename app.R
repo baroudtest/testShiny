@@ -70,6 +70,8 @@ sidebarLayout(
     fileInput("file",h2("Table de données")), # fileIput est l'outil permettant de lire un fichier de son choix à uploader
     div(textOutput("fichier1"), style = "color:green"),
     br(),
+    div(textOutput("erreur8"), style = "color:red"),
+    br(),
     div(textOutput("erreur1"), style = "color:red"),
     div(textOutput("erreur2"), style = "color:red"),
     div(textOutput("erreur3"), style = "color:red"),
@@ -77,7 +79,7 @@ sidebarLayout(
     div(textOutput("erreur5"), style = "color:red"),
     div(textOutput("erreur6"), style = "color:red"),
     div(textOutput("erreur7"), style = "color:red"),
-    div(textOutput("erreur8"), style = "color:red"),
+    
     br(),
    
     fileInput("infocam",h2("Informations de localisation des caméras")),
@@ -283,6 +285,8 @@ server <- function(input, output, session) {
   data <- reactive({
 
     req(input$file)
+    req(err()[8] == 7)
+    
     df<- read.csv(input$file$datapath,
                   header = TRUE,
                   sep = ";",
@@ -389,6 +393,7 @@ server <- function(input, output, session) {
   noms <- reactive({
     req(input$status)
     req(input$file)
+   
     
     verif_noms <- merge(data(),IUCN(),all.x=T)
     verif_noms <- unique(verif_noms[which(is.na(verif_noms$IUCN)),"Species"])
@@ -417,6 +422,19 @@ server <- function(input, output, session) {
   })
 ####################################################################################
     
+  
+  #Test Message d'erreur de fichier non conforme
+  ################
+  observeEvent(probleme(), {
+    showModal(modalDialog(
+      title = "fichier non conforme",
+      paste("Le fichier chargé ne correspond pas au format requis. veuillez charger une table de données conforme pour obtenir vos résultats. ", sep=""),
+      footer = modalButton("Fermer")
+    ))
+  })
+  
+  
+  
 # Traitement des données de la partie communauté --------------------------------------
 # table des informations sur les communautés par site 
 tableCom <- reactive({
@@ -453,6 +471,7 @@ tableCom <- reactive({
 
 output$richesse <- renderTable({
   req(input$file)
+ 
   tableCom()
 })
 
@@ -508,6 +527,7 @@ accumul <- function (){
 # Encodage du graphique réactif en output de manière à l'afficher
 output$accumul <- renderPlot({
   req(input$file)
+ 
   accumul()
 })
 
@@ -536,6 +556,8 @@ output$downloadAccumul <- downloadHandler(
 # indice d'occurence nocturne
 output$indnoc <- renderTable({
   req(input$file)
+  
+  
   
   sites <- aggregate(Individuals ~ Site, data = data(), sum)
   sites <- sites$Site
@@ -573,6 +595,8 @@ Def
 # Indice de présence humaine
 output$homme <- renderTable({
   req(input$file)
+  req(err()[8] == 7)
+
   
   sites <- aggregate(Individuals ~ Site, data = data(), sum)
   sites <- sites$Site
@@ -618,6 +642,7 @@ Def
 
 # message de chargement de table de données
 output$fichier1 <- renderText({
+  req(err()[8] == 7)
   if (is.data.frame(input$file) == TRUE ) {texte1 <- "Table de donnée chargée"}
   else texte1 <- {"Veuillez charger la table de données"}
     
@@ -665,6 +690,7 @@ observe({
 # faudrait-il ajouer détection par mois ? 
 tableEsp <- reactive({
   req(input$selectSp, input$selectLoc)
+ 
   ###
   #Tentative de caser le ALL
   if(input$selectSp == "All")
@@ -807,6 +833,7 @@ donnees_cartes_abun <- reactive ({
   
   # Sélection de l'espèce qui nous intéresse :
   req(input$selectSp)
+ 
   y <- as.character(input$selectSp)
   nb_indiv_selectesp <- n_indiv_cam_esp2
   # si "All" est encodé, graphique de toute les epsèces, si le nom d'une espèe est encodé, le prend en compte
@@ -1136,6 +1163,7 @@ output$downloadMap3 <- downloadHandler(
 # Encodage du graphique réactif en output de manière à l'afficher
 output$graph24h <- renderPlot({
 req(input$file)
+
   graph24()
 })
 
@@ -1164,6 +1192,11 @@ output$downloadGraph <- downloadHandler(
 err <- reactive({
   req(input$file)
   
+  df<- read.csv(input$file$datapath,
+                header = TRUE,
+                sep = ";",
+                quote = '"',
+                colClasses = "character")
  
   SpOk <- 0
   CamOk <- 0
@@ -1172,9 +1205,10 @@ err <- reactive({
   DaOk <- 0
   HoOk <- 0
   ImOk <- 0
+  AllOk <- 0
   x <- c(1,2,3,4,5,6,7)
   
-  x <- names(data())
+  x <- names(df)
  
   
   if (x[1] == "Species") {SpOk <- 1 }
@@ -1255,7 +1289,13 @@ err <- reactive({
   if (ImOk == 1) {IgOk <- ""}
   else { IgOk <- "Erreur, impossible de trouver la colonne 'Image'. vérifiez la syntaxe du jeu de donnée"}
 
-err <- c(SOk, DOk, COk, StOk, IOk, DOk, HOk, IgOk)
+AllOk <- (SpOk + CamOk + SiOk + InOk + DaOk + HoOk + ImOk)
+  
+  
+  if (AllOk == 7) {AlOk <- ""}
+  else {AlOk <- "Le fichier chargé ne correspond pas au format requis. veuillez charger une table de données conforme pour obtenir vos résultats. "}
+
+err <- c(SOk, DOk, COk, StOk, IOk, HOk, IgOk, AllOk,AlOk)
 err
   
 })
@@ -1306,10 +1346,15 @@ output$erreur7 <- renderText({
 
 output$erreur8 <- renderText({
   req(input$file)
-  err()[8]
+  err()[9]
 })
 
-
+probleme <- reactive({
+  req(err())
+  req(err()[8] != 7)
+  
+  1
+})
 
 }
 
