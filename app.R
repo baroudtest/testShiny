@@ -282,6 +282,29 @@ server <- function(input, output, session) {
     infocamera1
   })
   
+  CameraJour <- reactive({
+    req(input$infocam)
+    req(data())
+    infocamera <- read.csv(input$infocam$datapath,
+                           header = TRUE,
+                           sep = ";",
+                           quote = '"',
+                           colClasses = "character")
+    
+    
+   
+    names(infocamera) <- c("Camera","Notes","Serial","X","Y","Z","Jours","Utx","Uty")
+    
+    
+    test <- merge(infocamera,data(), by = "Camera")
+    
+    #  JourSite <- aggregate()
+    test$Jours <- as.numeric(test$Jours)
+    fin <- aggregate(Jours ~ Camera+Site, data = test, mean)
+    fin <- aggregate(Jours ~ Site, data = fin, sum)
+    fin
+    
+  })
   data <- reactive({
 
     req(input$file)
@@ -625,16 +648,13 @@ output$homme <- renderTable({
   
   
   # différence entre le premier et le dernier jour d'inventaire en jours
-    #datEN <- subset(datEN,datEN$IUCN=="EN"|datEN$IUCN=="CR")
-    donnees <- data()
-    donnees <- subset(donnees, donnees$Site == LeSite)
-  jour <- as.character(donnees$Date)
-  jour <- dmy(jour)
-  premier <- min(jour)
-  dernier <- max(jour)
-  nbjour <- as.numeric(dernier - premier)
-# rapport du nombre de "Homo sapiens" sur le nombre de jours d'inventaires  
-  d <- (b /nbjour)
+    
+ 
+    nbjours <- subset(CameraJour(),CameraJour()$Site == LeSite)
+    nbjourssite <- nbjours[1,2] 
+
+# rapport du nombre de "Homo sapiens" sur le nombre de jours d'inventaires remis au mois (30jours) 
+  d <- (b /nbjourssite)*30
   Def$indice[j] <- d
 }
 Def
