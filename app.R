@@ -917,7 +917,7 @@ donnees_cartes_abun <- reactive ({
           x = "utm_x", y = "utm_y") +
      theme_dark() +
      theme(
-       legend.position = c(1.1, 0.5),
+       legend.position = c(1.11, 0.5),
        legend.direction = "vertical",
        legend.key.size = unit(0.5, "cm"),
        legend.key.width = unit(0.5,"cm"),
@@ -971,7 +971,7 @@ donnees_cartes_abun <- reactive ({
           x = "utm_x", y = "utm_y") +
      theme_dark() +
      theme(
-       legend.position = c(1.12, 0.5),
+       legend.position = c(1.11, 0.5),
        legend.direction = "vertical",
        legend.key.size = unit(0.5, "cm"),
        legend.key.width = unit(0.5,"cm"),
@@ -1025,7 +1025,7 @@ donnees_cartes_abun <- reactive ({
           x = "utm_x", y = "utm_y") +
      theme_dark() +
      theme(
-       legend.position = c(1.12, 0.5),
+       legend.position = c(1.1, 0.5),
        legend.direction = "vertical",
        legend.key.size = unit(0.5, "cm"),
        legend.key.width = unit(0.5,"cm"),
