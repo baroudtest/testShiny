@@ -48,6 +48,8 @@ library(shinythemes)
 #install.packages("shinythemes")
 library(data.table)
 #install.packages("data.table")
+library(sp)
+#install.packages("sp")
 
 ## Agencement fluipage sur la page, outils d'interactions (uploader un fichier, case à cocher, sliders,...)----
 ui <- fluidPage(
@@ -207,8 +209,10 @@ tabPanel("Cacher la Note d'utilisateur",
                     
                       withSpinner(plotOutput("graph24h")),
                                   downloadButton("downloadGraph", "Download Graph"),
+              
                       withSpinner(plotOutput("carte_abon_paresp")),
-                                  downloadButton("downloadMap3", "Download Map")
+                                  downloadButton("downloadMap3", "Download Map"),
+                                  downloadButton("downloadCSV2", "Dowload CSV")
                           
     ))),
 
@@ -221,9 +225,13 @@ tabPanel("Cacher la Note d'utilisateur",
                       downloadButton("downloadMap1", "Download Map"),
                       br(),
                       br(),
+                      downloadButton("downloadCSV1", "Dowload two maps CSV's"),
+                      br(),
+                      br(),
                       withSpinner(plotOutput("carte_espèces_men")),
                       downloadButton("downloadMap2", "Download Map"),
-                      withSpinner(plotOutput("test_shp"))
+                      
+                      
     )))
 
 ## Fermeture des onglets ----------------------------------------
@@ -820,20 +828,22 @@ donnees_cartes_abun <- reactive ({
   # On commence par calculer le nb d'individus observés par caméra, dans un nouveau df
   nind_cam <- aggregate(Individuals ~ Camera, data = dfinal, sum)
   # On renomme la colonne Effcam
-  nind_cam <- rename(nind_cam,"EffCam"="Individuals") 
+  nind_cam <- rename(nind_cam,"Tot_individuals_cam"="Individuals") 
   # On joint alors la colonne EffCam contenan le nb d'indiv/cam au d.f portant sur le nb d'individus d'une espèce sélectionnée
   nb_indiv_cam_selectesp <- merge(nb_indiv_selectesp,nind_cam,by="Camera",all.x=T)
-  # On défini la colonne abuntot comme l'abondance relative totale de l'espèce sélectionnée pour une caméra donnée.
-  nb_indiv_cam_selectesp$abuntot <- as.numeric((nb_indiv_cam_selectesp$Individuals))/tot*100
-  # On défini la colonne abuncam comme l'abondance relative partielle (rapport non pas avec le nb tot d'individus, mais avec le nb 
-  # d'indiv pour cette caméra)
-  # de l'espèce sélectionnée pour une caméra donnée.
-  nb_indiv_cam_selectesp$abuncam <- as.numeric(nb_indiv_cam_selectesp$Individuals)/as.numeric(nb_indiv_cam_selectesp$EffCam)*100
-  
-  # On recommmence la manip précédente pour la jointure des coordonnées et transformation en df.sf :
   req(coordcam())
   infos_cam <- coordcam()
   infos_cam$name <- as.character(infos_cam$name)
+  infos_cam2 <- dplyr::select(infos_cam,duration,Camera = name)
+  nb_indiv_cam_selectesp <- merge(nb_indiv_cam_selectesp,infos_cam2,by="Camera",all.x=T)
+  nb_indiv_cam_selectesp$RAI <- as.numeric((nb_indiv_cam_selectesp$Individuals))/as.numeric((nb_indiv_cam_selectesp$duration))
+  # On défini la colonne abuntot comme l'abondance relative totale de l'espèce sélectionnée pour une caméra donnée.
+  # On défini la colonne abuncam comme l'abondance relative partielle (rapport non pas avec le nb tot d'individus, mais avec le nb 
+  # d'indiv pour cette caméra)
+  # de l'espèce sélectionnée pour une caméra donnée.
+  nb_indiv_cam_selectesp$abondance_rel <- as.numeric(nb_indiv_cam_selectesp$Individuals)/as.numeric(nb_indiv_cam_selectesp$Tot_individuals_cam)*100
+  
+  # On recommmence la manip précédente pour la jointure des coordonnées et transformation en df.sf :
   infos_cam1 = dplyr::select(infos_cam,utm_x:utm_y,Camera = name)
   
   infos_cam1$Camera=as.character(infos_cam1$Camera)
@@ -850,35 +860,6 @@ donnees_cartes_abun <- reactive ({
 })
 
   
-# PlotOutput polygone : ---------------------------------------------------------------
-
- test_shp1 <- reactive ({
-   req(EPSG())
-   epsg <-EPSG()
-   req(SHP())
-   shp <- SHP()
-   emmprise <- st_bbox(shp)
-   xmin <- emmprise[1]
-   ymin <- emmprise[2]
-   xmax <- emmprise[3]
-   ymax <- emmprise[4]
-   
-   
-   # Préparation de coeffs issus de l'emprise des coordonnées afin de produire une marge pour une meilleure visibilité des points et pour placer l'échelle et la flèche nord
-   diffx <- abs(abs(xmax)-abs(xmin))
-   diffy <- abs(abs(ymax)-abs(ymin))
-   diffx
-   diffy
-   coefx <- as.numeric(diffx/6)
-   coefy <- as.numeric(diffy/6)
-   coefx
-   coefy
-   
-   poly1 <- ggplot() +
-     geom_sf(data=shp) +
-     coord_sf(crs = st_crs(epsg),xlim=c(xmin-coefx,xmax+coefx),ylim=c(ymin-coefy,ymax+coefy), datum = sf::st_crs(4326), expand = FALSE)
-   poly1  
-   })
  
  # Test carto richesse spé :
  
@@ -1014,23 +995,23 @@ donnees_cartes_abun <- reactive ({
    
    
    carte3 <- ggplot() +
-     geom_sf(mapping=aes(size=abuntot, color=abuncam) ,data=richespe) +
+     geom_sf(mapping=aes(size=abondance_rel, color=RAI) ,data=richespe) +
      coord_sf(crs = st_crs(epsg),xlim=c(xmin-coefx,xmax+coefx),ylim=c(ymin-coefy,ymax+coefy), datum = sf::st_crs(4326), expand = FALSE) +
-     scale_size_continuous(name = "Nb d'individus menacés observés", range=c(1,6)) +
-     scale_colour_gradientn(name = "Abondance (en%)", colours = terrain.colors(5)) + 
-     guides(size=FALSE) +
-     labs(title = "Cartographie de l'abondance relative des espèces",
-          subtitle = "Pour les espèces sélectionnées, et par caméra",
-          caption = "La taille des points est proportionnelle à la part de l'abondance relative totale de l'espèce, expliquée par son observation pour cette caméra",
+     scale_size_continuous(name = "Abondance (en %)", range=c(2,7)) +
+     scale_colour_gradientn(name = "RAI (nb/jour)", colours = terrain.colors(5)) + 
+     labs(title = "Cartographie du RAI et de l'abondance relative des espèces sélectionnées",
+          subtitle = "Pour les caméras ou l'espèce à été détectée",
+          caption = "La taille des points indique l'ordre d'abondance relative de l'espèce pour chaque caméra",
           x = "utm_x", y = "utm_y") +
      theme_dark() +
      theme(
-       legend.position = c(1.1, 0.5),
+       legend.position = c(1.11, 0.5),
        legend.direction = "vertical",
-       legend.key.size = unit(0.5, "cm"),
-       legend.key.width = unit(0.5,"cm"),
+       legend.key.size = unit(0.4, "cm"),
+       legend.key.width = unit(0.4,"cm"),
        legend.title = element_text(color = "red", size = 9, face = "bold"),
        legend.text = element_text(color = "red", size = 8),
+       legend.background = element_rect(fill = "white"),
        plot.title = element_text(hjust = 0.5, size = 15, face = "bold"),
        plot.subtitle = element_text(hjust = 0.5),
        axis.title.x = element_text(color = "red", size = 10, face = "bold"),
@@ -1089,11 +1070,58 @@ output$downloadMap2 <- downloadHandler(
 
 output$downloadMap3 <- downloadHandler(
   # filename pour définir le nom par défaut du fichier produit, Content pour choisir le graph dans l'image
-  filename = function() {paste("Map_abund",input$selectSp, '.png', sep=' ') },
+  filename = function() {paste("Map_RAI",input$selectSp, '.png', sep=' ') },
   content = function(file) {
     
     ggsave(file,plot=carte_abon_paresp1(),width=18,height = 6)
   }
+  
+)
+
+# Préparation des données pour export csv :
+
+donnees_cartes_abun_df <- reactive ({
+  req(donnees_cartes_abun())
+  donneesf <- donnees_cartes_abun()
+  req(coordcam())
+  coordocam <- coordcam()
+  donneesdf = as.data.frame(st_drop_geometry(donneesf))
+  coordocam = dplyr::select(coordocam,utm_x:utm_y,Camera = name)
+  coordocam$Camera=as.character(coordocam$Camera)
+  donneesdf$Camera=as.character(donneesdf$Camera) 
+  donneesdf2 = left_join(donneesdf,coordocam, by = c("Camera" = "Camera"))
+  donneesdf2
+})
+
+donnees_cartes_richesse_spe_df <- reactive ({
+  req(donnees_cartes_richesse_spe())
+  donneesf1 <- donnees_cartes_richesse_spe()
+  req(coordcam())
+  coordocam <- coordcam()
+  donneesdf1 = as.data.frame(st_drop_geometry(donneesf1))
+  coordocam = dplyr::select(coordocam,utm_x:utm_y,Camera = name)
+  coordocam$Camera=as.character(coordocam$Camera)
+  donneesdf1$Camera=as.character(donneesdf1$Camera) 
+  donneesdf3 = left_join(donneesdf1,coordocam, by = c("Camera" = "Camera"))
+  donneesdf3
+})
+
+
+# Download du csv pour la richesse spé et les espèces EN et CR IUCN
+output$downloadCSV1 <- downloadHandler(
+  filename = paste("Richesse_IUCN.csv"),
+  content = function(file) {
+    write.table(donnees_cartes_richesse_spe_df(), file,quote = TRUE, sep = ";",dec=".",row.names = FALSE, col.names = TRUE)
+  } 
+  
+)
+
+# Download du csv pour le RAI et l'abondance
+output$downloadCSV2 <- downloadHandler(
+  filename = paste("RAI_abondance",input$selectSp, '.csv', sep=' '),
+  content = function(file) {
+    write.table(donnees_cartes_abun_df(), file,quote = TRUE, sep = ";",dec=".",row.names = FALSE, col.names = TRUE)
+  } 
   
 )
 
