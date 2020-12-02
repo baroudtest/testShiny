@@ -658,6 +658,7 @@ output$homme <- renderTable({
   Def$indice[j] <- d
 }
 Def
+
 })
 
 # message de chargement de table de données
