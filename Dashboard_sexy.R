@@ -49,7 +49,9 @@ library(shinythemes)
 library(data.table)
 #install.packages("data.table")
 library(shinydashboard)
-
+#install.packages("shinydashboard")
+library(DT)
+#install.packages("DT")
 
 #-------------------------------
 #-------------------------------
@@ -102,7 +104,14 @@ ui <- dashboardPage(
              "Cette application Shiny est dédiée à l’analyse de données issues d’inventaire par pièges photographiques."),
            br(),
            p(style = "text-align:justify;",
-             "Elle permet par une analyse automatisée de fournir quelques indicateurs qui caractérisent les inventaires de faune menés, la communauté et les espèces animale détectées le tout sous forme de tableaux, graphiques et cartes facilement téléchargeables.")
+             "Elle permet par une analyse automatisée de fournir quelques indicateurs qui caractérisent les inventaires de faune menés, 
+             la communauté et les espèces animale détectées le tout sous forme de tableaux, 
+             graphiques et cartes facilement téléchargeables."),
+           br(),
+           br(),
+           br(),
+           img(src = "gxabt_logo.png",
+               width = 270)
     )
   ), #Fermeture sidebar
   #-------------------------------
@@ -152,6 +161,8 @@ ui <- dashboardPage(
                 
                 box(title = "Note d'utilisateur",
                     width = 4,
+                    status = "danger",
+                    solidHeader = T,
                     # Note utilisateur
                     h4(div("Note importante concernant le format du jeu de données d'entrée :", style = "color:red")),
                     p("1) Le jeu de donnée doit être au", strong("format de sortie .csv attribué par CameraBase, organisé comme suit"), "et doit comporter des colonnes ayant ces noms exacts, écrits dans cet ordre respectif :"),
@@ -195,7 +206,8 @@ ui <- dashboardPage(
                     solidHeader = T,
                     "Vous trouverez ci-dessous un tableau récapitulatif de la communauté détectée durant votre/vos inventaire(s).",
                     br(),
-                    withSpinner(tableOutput("richesse")),
+                    div(style ='overflow-x:scroll',
+                        withSpinner(tableOutput("richesse"))),
                     downloadButton("downloadCom", "Download")
                 ),#Fermeture box
                 
@@ -216,7 +228,7 @@ ui <- dashboardPage(
                 ),
                 
                 box(title = "Effort d'échantillonnage",
-                    width = 8,
+                    width = 6,
                     status = "warning",
                     solidHeader = T,
                     "La richesse spécifique peut également s’analyser en fonction de l’effort d’échantillonnage réalisé, ce qui permet d’analyser l’exhaustivité de l’inventaire.",
@@ -233,8 +245,9 @@ ui <- dashboardPage(
       #Analyse par espèce
       tabItem(tabName = "anal_esp",
               fluidRow(
-                box(title = "Indices",
+                box(title = "Tableau analytique",
                     width = 6,
+                    height = 900,
                     status = "warning",
                     solidHeader = T,
                     p(style = "text-align:justify;",
@@ -250,36 +263,45 @@ ui <- dashboardPage(
                                    label = "Sélection du site",
                                    choices = "",
                                    multiple = TRUE),
-                    br(),
-                    withSpinner(tableOutput("ab_rel")),
+                    div(style = 'overflow-y:scroll;height:520px',
+                        withSpinner(tableOutput("ab_rel"))),
                     downloadButton("downloadData", "Download")
                 ),#fermeture box
                 
-                box(title = "Graphique chelou à nommer",
-                    width = 6,
+                box(title = "Figures",
                     status = "warning",
                     solidHeader = T,
-                    selectizeInput(inputId = "selectSp_graph",
-                                   label = "Sélection de l'espèce",
-                                   choices = "",
-                                   selected = ""),
-                    selectizeInput(inputId = "selectLoc_graph",
-                                   label = "Sélection du site",
-                                   choices = ""),
-                    withSpinner(plotOutput("graph24h")),
-                    downloadButton("downloadGraph", "Download Graph")
-                ),#Fermeture box
+                    tabBox(
+                      title = NULL,
+                      width = 12,
+                      tabPanel(title = "Graphique chelou à nommer",
+                               width = 12,
+                               status = "warning",
+                               solidHeader = T,
+                               selectizeInput(inputId = "selectSp_graph",
+                                              label = "Sélection de l'espèce",
+                                              choices = "",
+                                              selected = ""),
+                               selectizeInput(inputId = "selectLoc_graph",
+                                              label = "Sélection du site",
+                                              choices = ""),
+                               withSpinner(plotOutput("graph24h")),
+                               downloadButton("downloadGraph", "Download Graph")
+                      ),
+                      
+                      tabPanel(title = "Carte d'abondance par espèce",
+                               width = 12,
+                               status = "warning",
+                               solidHeader = T,
+                               selectizeInput(inputId = "selectSp_carto",
+                                              label = "Sélection de l'espèce",
+                                              choices = ""),
+                               withSpinner(plotOutput("carte_abon_paresp")),
+                               downloadButton("downloadMap3", "Download Map")
+                      )
+                    )#Fermeture tabbox
+                    )#Fermeture box
                 
-                box(title = "Carte d'abondance par espèce",
-                    width = 6,
-                    status = "warning",
-                    solidHeader = T,
-                    selectizeInput(inputId = "selectSp_carto",
-                                   label = "Sélection de l'espèce",
-                                   choices = ""),
-                    withSpinner(plotOutput("carte_abon_paresp")),
-                    downloadButton("downloadMap3", "Download Map")
-                ),
               )#Fermeture fluidrow
               
       ),#fermeture tabitem anal_esp
@@ -1223,14 +1245,19 @@ server <- function(input, output, session) {
   
   graph24 <- reactive ({
     # récupérer l'espèce encodée 
+    k <- as.character(input$selectLoc_graph)
     
     x <- as.character(input$selectSp_graph)
     
     # récupérer le dataframe nettoyé
     df <- data()
     # si "All" est encodé, graphique de toute les epsèces, si le nome d'une espèe est encodé, le prend en compte
+    if (input$SelectLoc_graph != "All")
+      df <- df[df$Site == k,]
+    
     if (input$selectSp_graph != "All")
       df <- df[df$Species == x,]
+    
     
     # récupérer les heures concernées de l'espèce choisie
     
