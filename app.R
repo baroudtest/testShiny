@@ -160,6 +160,13 @@ tabPanel("Cacher la Note d'utilisateur",
                       "La richesse spécifique peut également s’analyser en fonction de l’effort d’échantillonnage réalisé, 
                       ce qui permet d’analyser l’exhaustivité de l’inventaire.",
                       br(),
+                      br(),
+                      selectizeInput(inputId = "selectSite",
+                                     label = "Affichage des courbes",
+                                     choices = "",
+                                     selected = "",
+                                     multiple = TRUE),
+                      br(),
                       withSpinner(plotOutput("accumul")),
                       downloadButton("downloadAccumul", "Download Graph"),
                       br()),
@@ -510,9 +517,30 @@ output$downloadCom <- downloadHandler(
 
 
 # Création de la courbe d'accumulation en réactive de façon à pouvoir la télécharger
+observe({
+  updateSelectizeInput(
+    session,
+    inputId = "selectSite",
+    choices = c("Tous sites confondus", "Une courbe par site"),
+    selected = "Une courbe par site"
+  )  
+})
+
+
 ##PLUSIEURS SITES PAR GRAPHIQUE
 accumul <- function (){
-  
+  if(input$selectSite == "Tous sites confondus"){
+  matriceTot <- aggregate(Individuals ~ Date+Species,data=data(),sum)
+  matriceTot$Date <- dmy(matriceTot$Date)
+  matriceTot <- matriceTot[order(matriceTot$Date),]
+  matriceTot <- dcast(matriceTot,Date~Species,fill=0)
+  rownames(matriceTot) <- matriceTot[,1]
+  matriceTot <- matriceTot[,-1]
+
+  accumTot <- specaccum(matriceTot)
+  plot(accumTot,xlab = "Nb de jours d'inventaire cumulés",ylab = "Nombre d'espèces",ci=0)
+  title(main="Courbe d'accumulation") }
+  else {
   matriceSite <- aggregate(Individuals ~ Date+Site+Species,data=data(),sum)
   matriceSite$Date <- dmy(matriceSite$Date)
   matriceSite <- matriceSite[order(matriceSite$Date),]
@@ -520,8 +548,7 @@ accumul <- function (){
   sites <- aggregate(Individuals ~ Site, data = data(), sum)
   sites <- sites$Site
   nSites <- length(sites)
-  
-  par(mfrow = c(1,1))
+
   matrices_sep <- list()
   accumSite <- list()
   for (i in 1:nSites) {
@@ -543,7 +570,7 @@ accumul <- function (){
   legend(x="bottomright",legend=c(sites),col=2:(nSites+1),lty=1:1,lwd=1:1,cex=0.8)
   for (i in 1:nSites) {
     plot(accumSite[[i]],xlab = "Nb de jours d'inventaire cumulés",ylab = "Nombre d'espèces",
-         ci=0,add=T,col=i+1) #ajouter legende : couleurs selon les sites
+         ci=0,add=T,col=i+1)} #ajouter legende : couleurs selon les sites
   }
 }
 
