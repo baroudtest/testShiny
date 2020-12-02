@@ -72,6 +72,8 @@ sidebarLayout(
     fileInput("file",h2("Table de données")), # fileIput est l'outil permettant de lire un fichier de son choix à uploader
     div(textOutput("fichier1"), style = "color:green"),
     br(),
+    div(textOutput("erreur8"), style = "color:red"),
+    br(),
     div(textOutput("erreur1"), style = "color:red"),
     div(textOutput("erreur2"), style = "color:red"),
     div(textOutput("erreur3"), style = "color:red"),
@@ -79,7 +81,7 @@ sidebarLayout(
     div(textOutput("erreur5"), style = "color:red"),
     div(textOutput("erreur6"), style = "color:red"),
     div(textOutput("erreur7"), style = "color:red"),
-    div(textOutput("erreur8"), style = "color:red"),
+    
     br(),
    
     fileInput("infocam",h2("Informations de localisation des caméras")),
@@ -159,6 +161,13 @@ tabPanel("Cacher la Note d'utilisateur",
                column(width = 7,
                       "La richesse spécifique peut également s’analyser en fonction de l’effort d’échantillonnage réalisé, 
                       ce qui permet d’analyser l’exhaustivité de l’inventaire.",
+                      br(),
+                      br(),
+                      selectizeInput(inputId = "selectSite",
+                                     label = "Affichage des courbes",
+                                     choices = "",
+                                     selected = "",
+                                     multiple = TRUE),
                       br(),
                       withSpinner(plotOutput("accumul")),
                       downloadButton("downloadAccumul", "Download Graph"),
@@ -288,9 +297,34 @@ server <- function(input, output, session) {
     infocamera1
   })
   
+  CameraJour <- reactive({
+    req(input$infocam)
+    req(data())
+    infocamera <- read.csv(input$infocam$datapath,
+                           header = TRUE,
+                           sep = ";",
+                           quote = '"',
+                           colClasses = "character")
+    
+    
+   
+    names(infocamera) <- c("Camera","Notes","Serial","X","Y","Z","Jours","Utx","Uty")
+    
+    
+    test <- merge(infocamera,data(), by = "Camera")
+    
+    #  JourSite <- aggregate()
+    test$Jours <- as.numeric(test$Jours)
+    fin <- aggregate(Jours ~ Camera+Site, data = test, mean)
+    fin <- aggregate(Jours ~ Site, data = fin, sum)
+    fin
+    
+  })
   data <- reactive({
 
     req(input$file)
+    req(err()[8] == 7)
+    
     df<- read.csv(input$file$datapath,
                   header = TRUE,
                   sep = ";",
@@ -397,6 +431,7 @@ server <- function(input, output, session) {
   noms <- reactive({
     req(input$status)
     req(input$file)
+   
     
     verif_noms <- merge(data(),IUCN(),all.x=T)
     verif_noms <- unique(verif_noms[which(is.na(verif_noms$IUCN)),"Species"])
@@ -425,6 +460,19 @@ server <- function(input, output, session) {
   })
 ####################################################################################
     
+  
+  #Test Message d'erreur de fichier non conforme
+  ################
+  observeEvent(probleme(), {
+    showModal(modalDialog(
+      title = "fichier non conforme",
+      paste("Le fichier chargé ne correspond pas au format requis. veuillez charger une table de données conforme pour obtenir vos résultats. ", sep=""),
+      footer = modalButton("Fermer")
+    ))
+  })
+  
+  
+  
 # Traitement des données de la partie communauté --------------------------------------
 # table des informations sur les communautés par site 
 tableCom <- reactive({
@@ -461,6 +509,7 @@ tableCom <- reactive({
 
 output$richesse <- renderTable({
   req(input$file)
+ 
   tableCom()
 })
 
@@ -476,9 +525,30 @@ output$downloadCom <- downloadHandler(
 
 
 # Création de la courbe d'accumulation en réactive de façon à pouvoir la télécharger
+observe({
+  updateSelectizeInput(
+    session,
+    inputId = "selectSite",
+    choices = c("Tous sites confondus", "Une courbe par site"),
+    selected = "Une courbe par site"
+  )  
+})
+
+
 ##PLUSIEURS SITES PAR GRAPHIQUE
 accumul <- function (){
-  
+  if(input$selectSite == "Tous sites confondus"){
+  matriceTot <- aggregate(Individuals ~ Date+Species,data=data(),sum)
+  matriceTot$Date <- dmy(matriceTot$Date)
+  matriceTot <- matriceTot[order(matriceTot$Date),]
+  matriceTot <- dcast(matriceTot,Date~Species,fill=0)
+  rownames(matriceTot) <- matriceTot[,1]
+  matriceTot <- matriceTot[,-1]
+
+  accumTot <- specaccum(matriceTot)
+  plot(accumTot,xlab = "Nb de jours d'inventaire cumulés",ylab = "Nombre d'espèces",ci=0)
+  title(main="Courbe d'accumulation") }
+  else {
   matriceSite <- aggregate(Individuals ~ Date+Site+Species,data=data(),sum)
   matriceSite$Date <- dmy(matriceSite$Date)
   matriceSite <- matriceSite[order(matriceSite$Date),]
@@ -486,8 +556,7 @@ accumul <- function (){
   sites <- aggregate(Individuals ~ Site, data = data(), sum)
   sites <- sites$Site
   nSites <- length(sites)
-  
-  par(mfrow = c(1,1))
+
   matrices_sep <- list()
   accumSite <- list()
   for (i in 1:nSites) {
@@ -509,13 +578,14 @@ accumul <- function (){
   legend(x="bottomright",legend=c(sites),col=2:(nSites+1),lty=1:1,lwd=1:1,cex=0.8)
   for (i in 1:nSites) {
     plot(accumSite[[i]],xlab = "Nb de jours d'inventaire cumulés",ylab = "Nombre d'espèces",
-         ci=0,add=T,col=i+1) #ajouter legende : couleurs selon les sites
+         ci=0,add=T,col=i+1)} #ajouter legende : couleurs selon les sites
   }
 }
 
 # Encodage du graphique réactif en output de manière à l'afficher
 output$accumul <- renderPlot({
   req(input$file)
+ 
   accumul()
 })
 
@@ -544,6 +614,8 @@ output$downloadAccumul <- downloadHandler(
 # indice d'occurence nocturne
 output$indnoc <- renderTable({
   req(input$file)
+  
+  
   
   sites <- aggregate(Individuals ~ Site, data = data(), sum)
   sites <- sites$Site
@@ -581,6 +653,8 @@ Def
 # Indice de présence humaine
 output$homme <- renderTable({
   req(input$file)
+  req(err()[8] == 7)
+
   
   sites <- aggregate(Individuals ~ Site, data = data(), sum)
   sites <- sites$Site
@@ -609,23 +683,22 @@ output$homme <- renderTable({
   
   
   # différence entre le premier et le dernier jour d'inventaire en jours
-    #datEN <- subset(datEN,datEN$IUCN=="EN"|datEN$IUCN=="CR")
-    donnees <- data()
-    donnees <- subset(donnees, donnees$Site == LeSite)
-  jour <- as.character(donnees$Date)
-  jour <- dmy(jour)
-  premier <- min(jour)
-  dernier <- max(jour)
-  nbjour <- as.numeric(dernier - premier)
-# rapport du nombre de "Homo sapiens" sur le nombre de jours d'inventaires  
-  d <- (b /nbjour)
+    
+ 
+    nbjours <- subset(CameraJour(),CameraJour()$Site == LeSite)
+    nbjourssite <- nbjours[1,2] 
+
+# rapport du nombre de "Homo sapiens" sur le nombre de jours d'inventaires remis au mois (30jours) 
+  d <- (b /nbjourssite)*30
   Def$indice[j] <- d
 }
 Def
+
 })
 
 # message de chargement de table de données
 output$fichier1 <- renderText({
+  req(err()[8] == 7)
   if (is.data.frame(input$file) == TRUE ) {texte1 <- "Table de donnée chargée"}
   else texte1 <- {"Veuillez charger la table de données"}
     
@@ -673,6 +746,7 @@ observe({
 # faudrait-il ajouer détection par mois ? 
 tableEsp <- reactive({
   req(input$selectSp, input$selectLoc)
+ 
   ###
   #Tentative de caser le ALL
   if(input$selectSp == "All")
@@ -815,6 +889,7 @@ donnees_cartes_abun <- reactive ({
   
   # Sélection de l'espèce qui nous intéresse :
   req(input$selectSp)
+ 
   y <- as.character(input$selectSp)
   nb_indiv_selectesp <- n_indiv_cam_esp2
   # si "All" est encodé, graphique de toute les epsèces, si le nom d'une espèe est encodé, le prend en compte
@@ -1164,6 +1239,7 @@ output$downloadCSV2 <- downloadHandler(
 # Encodage du graphique réactif en output de manière à l'afficher
 output$graph24h <- renderPlot({
 req(input$file)
+
   graph24()
 })
 
@@ -1192,6 +1268,11 @@ output$downloadGraph <- downloadHandler(
 err <- reactive({
   req(input$file)
   
+  df<- read.csv(input$file$datapath,
+                header = TRUE,
+                sep = ";",
+                quote = '"',
+                colClasses = "character")
  
   SpOk <- 0
   CamOk <- 0
@@ -1200,9 +1281,10 @@ err <- reactive({
   DaOk <- 0
   HoOk <- 0
   ImOk <- 0
+  AllOk <- 0
   x <- c(1,2,3,4,5,6,7)
   
-  x <- names(data())
+  x <- names(df)
  
   
   if (x[1] == "Species") {SpOk <- 1 }
@@ -1283,7 +1365,13 @@ err <- reactive({
   if (ImOk == 1) {IgOk <- ""}
   else { IgOk <- "Erreur, impossible de trouver la colonne 'Image'. vérifiez la syntaxe du jeu de donnée"}
 
-err <- c(SOk, DOk, COk, StOk, IOk, DOk, HOk, IgOk)
+AllOk <- (SpOk + CamOk + SiOk + InOk + DaOk + HoOk + ImOk)
+  
+  
+  if (AllOk == 7) {AlOk <- ""}
+  else {AlOk <- "Le fichier chargé ne correspond pas au format requis. veuillez charger une table de données conforme pour obtenir vos résultats. "}
+
+err <- c(SOk, DOk, COk, StOk, IOk, HOk, IgOk, AllOk,AlOk)
 err
   
 })
@@ -1334,10 +1422,15 @@ output$erreur7 <- renderText({
 
 output$erreur8 <- renderText({
   req(input$file)
-  err()[8]
+  err()[9]
 })
 
-
+probleme <- reactive({
+  req(err())
+  req(err()[8] != 7)
+  
+  1
+})
 
 }
 
