@@ -234,7 +234,11 @@ ui <- dashboardPage(
                     status = "warning",
                     solidHeader = T,
                     "La richesse spécifique peut également s’analyser en fonction de l’effort d’échantillonnage réalisé, ce qui permet d’analyser l’exhaustivité de l’inventaire.",
-                    br(),
+                    selectizeInput(inputId = "selectSite",
+                                   label = "Affichage des courbes",
+                                   choices = "",
+                                   selected = "",
+                                   multiple = TRUE),
                     withSpinner(plotOutput("accumul")),
                     downloadButton("downloadAccumul", "Download Graph")
                 )
@@ -335,6 +339,7 @@ ui <- dashboardPage(
   )#fermeture dashboardbody
 ) #Fermeture ui
 
+
 ## Partie Server ------------------------------------------------ 
 # traitement de données, récupération des inputs, préparation des outputs
 
@@ -376,6 +381,29 @@ server <- function(input, output, session) {
     infocamera1
   })
   
+  CameraJour <- reactive({
+    req(input$infocam)
+    req(data())
+    infocamera <- read.csv(input$infocam$datapath,
+                           header = TRUE,
+                           sep = ";",
+                           quote = '"',
+                           colClasses = "character")
+    
+    
+    
+    names(infocamera) <- c("Camera","Notes","Serial","X","Y","Z","Jours","Utx","Uty")
+    
+    
+    test <- merge(infocamera,data(), by = "Camera")
+    
+    #  JourSite <- aggregate()
+    test$Jours <- as.numeric(test$Jours)
+    fin <- aggregate(Jours ~ Camera+Site, data = test, mean)
+    fin <- aggregate(Jours ~ Site, data = fin, sum)
+    fin
+    
+  })
   data <- reactive({
     
     req(input$file)
@@ -581,40 +609,60 @@ server <- function(input, output, session) {
   
   
   # Création de la courbe d'accumulation en réactive de façon à pouvoir la télécharger
+  observe({
+    updateSelectizeInput(
+      session,
+      inputId = "selectSite",
+      choices = c("Tous sites confondus", "Une courbe par site"),
+      selected = "Une courbe par site"
+    )  
+  })
+  
+  
   ##PLUSIEURS SITES PAR GRAPHIQUE
   accumul <- function (){
-    
-    matriceSite <- aggregate(Individuals ~ Date+Site+Species,data=data(),sum)
-    matriceSite$Date <- dmy(matriceSite$Date)
-    matriceSite <- matriceSite[order(matriceSite$Date),]
-    
-    sites <- aggregate(Individuals ~ Site, data = data(), sum)
-    sites <- sites$Site
-    nSites <- length(sites)
-    
-    par(mfrow = c(1,1))
-    matrices_sep <- list()
-    accumSite <- list()
-    for (i in 1:nSites) {
-      matrices_sep[[i]] <- subset(matriceSite, substr(matriceSite$Site,1,3)==substr(sites[i],1,3))
-      matrices_sep[[i]] <- matrices_sep[[i]][,-2]
-      matrices_sep[[i]] <- dcast(matrices_sep[[i]],Date~Species,fill=0)
-      rownames(matrices_sep[[i]]) <- matrices_sep[[i]][,1]
-      matrices_sep[[i]] <- matrices_sep[[i]][,-1]
-      accumSite[[i]] <- specaccum(matrices_sep[[i]])
-    }
-    
-    rich <- aggregate(Individuals ~ Site+Species, data = data(), sum)
-    rich <- aggregate(Individuals ~ Site, data = rich, length)
-    m <- which(rich$Individuals==max(rich$Individuals))
-    
-    plot(accumSite[[m]],xlab = "Nb de jours d'inventaire cumulés",ylab = "Nombre d'espèces",
-         ci=0,col=2,key.pos=4) #ajouter legende : couleurs selon les sites
-    title("Courbes d'accumulation")
-    legend(x="bottomright",legend=c(sites),col=2:(nSites+1),lty=1:1,lwd=1:1,cex=0.8)
-    for (i in 1:nSites) {
-      plot(accumSite[[i]],xlab = "Nb de jours d'inventaire cumulés",ylab = "Nombre d'espèces",
-           ci=0,add=T,col=i+1) #ajouter legende : couleurs selon les sites
+    if(input$selectSite == "Tous sites confondus"){
+      matriceTot <- aggregate(Individuals ~ Date+Species,data=data(),sum)
+      matriceTot$Date <- dmy(matriceTot$Date)
+      matriceTot <- matriceTot[order(matriceTot$Date),]
+      matriceTot <- dcast(matriceTot,Date~Species,fill=0)
+      rownames(matriceTot) <- matriceTot[,1]
+      matriceTot <- matriceTot[,-1]
+      
+      accumTot <- specaccum(matriceTot)
+      plot(accumTot,xlab = "Nb de jours d'inventaire cumulés",ylab = "Nombre d'espèces",ci=0)
+      title(main="Courbe d'accumulation") }
+    else {
+      matriceSite <- aggregate(Individuals ~ Date+Site+Species,data=data(),sum)
+      matriceSite$Date <- dmy(matriceSite$Date)
+      matriceSite <- matriceSite[order(matriceSite$Date),]
+      
+      sites <- aggregate(Individuals ~ Site, data = data(), sum)
+      sites <- sites$Site
+      nSites <- length(sites)
+      
+      matrices_sep <- list()
+      accumSite <- list()
+      for (i in 1:nSites) {
+        matrices_sep[[i]] <- subset(matriceSite, substr(matriceSite$Site,1,3)==substr(sites[i],1,3))
+        matrices_sep[[i]] <- matrices_sep[[i]][,-2]
+        matrices_sep[[i]] <- dcast(matrices_sep[[i]],Date~Species,fill=0)
+        rownames(matrices_sep[[i]]) <- matrices_sep[[i]][,1]
+        matrices_sep[[i]] <- matrices_sep[[i]][,-1]
+        accumSite[[i]] <- specaccum(matrices_sep[[i]])
+      }
+      
+      rich <- aggregate(Individuals ~ Site+Species, data = data(), sum)
+      rich <- aggregate(Individuals ~ Site, data = rich, length)
+      m <- which(rich$Individuals==max(rich$Individuals))
+      
+      plot(accumSite[[m]],xlab = "Nb de jours d'inventaire cumulés",ylab = "Nombre d'espèces",
+           ci=0,col=2,key.pos=4) #ajouter legende : couleurs selon les sites
+      title("Courbes d'accumulation")
+      legend(x="bottomright",legend=c(sites),col=2:(nSites+1),lty=1:1,lwd=1:1,cex=0.8)
+      for (i in 1:nSites) {
+        plot(accumSite[[i]],xlab = "Nb de jours d'inventaire cumulés",ylab = "Nombre d'espèces",
+             ci=0,add=T,col=i+1)} #ajouter legende : couleurs selon les sites
     }
   }
   
@@ -719,19 +767,17 @@ server <- function(input, output, session) {
       
       
       # différence entre le premier et le dernier jour d'inventaire en jours
-      #datEN <- subset(datEN,datEN$IUCN=="EN"|datEN$IUCN=="CR")
-      donnees <- data()
-      donnees <- subset(donnees, donnees$Site == LeSite)
-      jour <- as.character(donnees$Date)
-      jour <- dmy(jour)
-      premier <- min(jour)
-      dernier <- max(jour)
-      nbjour <- as.numeric(dernier - premier)
-      # rapport du nombre de "Homo sapiens" sur le nombre de jours d'inventaires  
-      d <- (b /nbjour)
+      
+      
+      nbjours <- subset(CameraJour(),CameraJour()$Site == LeSite)
+      nbjourssite <- nbjours[1,2] 
+      
+      # rapport du nombre de "Homo sapiens" sur le nombre de jours d'inventaires remis au mois (30jours) 
+      d <- (b /nbjourssite)*30
       Def$indice[j] <- d
     }
     Def
+    
   })
   
   # message de chargement de table de données
@@ -962,17 +1008,19 @@ server <- function(input, output, session) {
     nind_cam <- rename(nind_cam,"EffCam"="Individuals") 
     # On joint alors la colonne EffCam contenan le nb d'indiv/cam au d.f portant sur le nb d'individus d'une espèce sélectionnée
     nb_indiv_cam_selectesp <- merge(nb_indiv_selectesp,nind_cam,by="Camera",all.x=T)
-    # On défini la colonne abuntot comme l'abondance relative totale de l'espèce sélectionnée pour une caméra donnée.
-    nb_indiv_cam_selectesp$abuntot <- as.numeric((nb_indiv_cam_selectesp$Individuals))/tot*100
-    # On défini la colonne abuncam comme l'abondance relative partielle (rapport non pas avec le nb tot d'individus, mais avec le nb 
-    # d'indiv pour cette caméra)
-    # de l'espèce sélectionnée pour une caméra donnée.
-    nb_indiv_cam_selectesp$abuncam <- as.numeric(nb_indiv_cam_selectesp$Individuals)/as.numeric(nb_indiv_cam_selectesp$EffCam)*100
-    
-    # On recommmence la manip précédente pour la jointure des coordonnées et transformation en df.sf :
     req(coordcam())
     infos_cam <- coordcam()
     infos_cam$name <- as.character(infos_cam$name)
+    infos_cam2 <- dplyr::select(infos_cam,duration,Camera = name)
+    nb_indiv_cam_selectesp <- merge(nb_indiv_cam_selectesp,infos_cam2,by="Camera",all.x=T)
+    nb_indiv_cam_selectesp$RAI <- as.numeric((nb_indiv_cam_selectesp$Individuals))/as.numeric((nb_indiv_cam_selectesp$duration))
+    # On défini la colonne abuntot comme l'abondance relative totale de l'espèce sélectionnée pour une caméra donnée.
+    # On défini la colonne abuncam comme l'abondance relative partielle (rapport non pas avec le nb tot d'individus, mais avec le nb 
+    # d'indiv pour cette caméra)
+    # de l'espèce sélectionnée pour une caméra donnée.
+    nb_indiv_cam_selectesp$abondance_rel <- as.numeric(nb_indiv_cam_selectesp$Individuals)/as.numeric(nb_indiv_cam_selectesp$Tot_individuals_cam)*100
+    
+    # On recommmence la manip précédente pour la jointure des coordonnées et transformation en df.sf :
     infos_cam1 = dplyr::select(infos_cam,utm_x:utm_y,Camera = name)
     
     infos_cam1$Camera=as.character(infos_cam1$Camera)
@@ -989,35 +1037,6 @@ server <- function(input, output, session) {
   })
   
   
-  # PlotOutput polygone : ---------------------------------------------------------------
-  
-  test_shp1 <- reactive ({
-    req(EPSG())
-    epsg <-EPSG()
-    req(SHP())
-    shp <- SHP()
-    emmprise <- st_bbox(shp)
-    xmin <- emmprise[1]
-    ymin <- emmprise[2]
-    xmax <- emmprise[3]
-    ymax <- emmprise[4]
-    
-    
-    # Préparation de coeffs issus de l'emprise des coordonnées afin de produire une marge pour une meilleure visibilité des points et pour placer l'échelle et la flèche nord
-    diffx <- abs(abs(xmax)-abs(xmin))
-    diffy <- abs(abs(ymax)-abs(ymin))
-    diffx
-    diffy
-    coefx <- as.numeric(diffx/6)
-    coefy <- as.numeric(diffy/6)
-    coefx
-    coefy
-    
-    poly1 <- ggplot() +
-      geom_sf(data=shp) +
-      coord_sf(crs = st_crs(epsg),xlim=c(xmin-coefx,xmax+coefx),ylim=c(ymin-coefy,ymax+coefy), datum = sf::st_crs(4326), expand = FALSE)
-    poly1  
-  })
   
   # Test carto richesse spé :
   
@@ -1056,7 +1075,7 @@ server <- function(input, output, session) {
            x = "utm_x", y = "utm_y") +
       theme_dark() +
       theme(
-        legend.position = c(1.1, 0.5),
+        legend.position = c(1.11, 0.5),
         legend.direction = "vertical",
         legend.key.size = unit(0.5, "cm"),
         legend.key.width = unit(0.5,"cm"),
@@ -1110,7 +1129,7 @@ server <- function(input, output, session) {
            x = "utm_x", y = "utm_y") +
       theme_dark() +
       theme(
-        legend.position = c(1.12, 0.5),
+        legend.position = c(1.11, 0.5),
         legend.direction = "vertical",
         legend.key.size = unit(0.5, "cm"),
         legend.key.width = unit(0.5,"cm"),
@@ -1153,23 +1172,23 @@ server <- function(input, output, session) {
     
     
     carte3 <- ggplot() +
-      geom_sf(mapping=aes(size=abuntot, color=abuncam) ,data=richespe) +
+      geom_sf(mapping=aes(size=abondance_rel, color=RAI) ,data=richespe) +
       coord_sf(crs = st_crs(epsg),xlim=c(xmin-coefx,xmax+coefx),ylim=c(ymin-coefy,ymax+coefy), datum = sf::st_crs(4326), expand = FALSE) +
-      scale_size_continuous(name = "Nb d'individus menacés observés", range=c(1,6)) +
-      scale_colour_gradientn(name = "Abondance (en%)", colours = terrain.colors(5)) + 
-      guides(size=FALSE) +
-      labs(title = "Cartographie de l'abondance relative des espèces",
-           subtitle = "Pour les espèces sélectionnées, et par caméra",
-           caption = "La taille des points est proportionnelle à la part de l'abondance relative totale de l'espèce, expliquée par son observation pour cette caméra",
+      scale_size_continuous(name = "Abondance (en %)", range=c(2,7)) +
+      scale_colour_gradientn(name = "RAI (nb/jour)", colours = terrain.colors(5)) + 
+      labs(title = "Cartographie du RAI et de l'abondance relative des espèces sélectionnées",
+           subtitle = "Pour les caméras ou l'espèce à été détectée",
+           caption = "La taille des points indique l'ordre d'abondance relative de l'espèce pour chaque caméra",
            x = "utm_x", y = "utm_y") +
       theme_dark() +
       theme(
-        legend.position = c(1.12, 0.5),
+        legend.position = c(1.11, 0.5),
         legend.direction = "vertical",
-        legend.key.size = unit(0.5, "cm"),
-        legend.key.width = unit(0.5,"cm"),
+        legend.key.size = unit(0.4, "cm"),
+        legend.key.width = unit(0.4,"cm"),
         legend.title = element_text(color = "red", size = 9, face = "bold"),
         legend.text = element_text(color = "red", size = 8),
+        legend.background = element_rect(fill = "white"),
         plot.title = element_text(hjust = 0.5, size = 15, face = "bold"),
         plot.subtitle = element_text(hjust = 0.5),
         axis.title.x = element_text(color = "red", size = 10, face = "bold"),
@@ -1228,11 +1247,58 @@ server <- function(input, output, session) {
   
   output$downloadMap3 <- downloadHandler(
     # filename pour définir le nom par défaut du fichier produit, Content pour choisir le graph dans l'image
-    filename = function() {paste("Map_abund",input$selectSp_carto, '.png', sep=' ') },
+    filename = function() {paste("Map_RAI",input$selectSp, '.png', sep=' ') },
     content = function(file) {
       
       ggsave(file,plot=carte_abon_paresp1(),width=18,height = 6)
     }
+    
+  )
+  
+  # Préparation des données pour export csv :
+  
+  donnees_cartes_abun_df <- reactive ({
+    req(donnees_cartes_abun())
+    donneesf <- donnees_cartes_abun()
+    req(coordcam())
+    coordocam <- coordcam()
+    donneesdf = as.data.frame(st_drop_geometry(donneesf))
+    coordocam = dplyr::select(coordocam,utm_x:utm_y,Camera = name)
+    coordocam$Camera=as.character(coordocam$Camera)
+    donneesdf$Camera=as.character(donneesdf$Camera) 
+    donneesdf2 = left_join(donneesdf,coordocam, by = c("Camera" = "Camera"))
+    donneesdf2
+  })
+  
+  donnees_cartes_richesse_spe_df <- reactive ({
+    req(donnees_cartes_richesse_spe())
+    donneesf1 <- donnees_cartes_richesse_spe()
+    req(coordcam())
+    coordocam <- coordcam()
+    donneesdf1 = as.data.frame(st_drop_geometry(donneesf1))
+    coordocam = dplyr::select(coordocam,utm_x:utm_y,Camera = name)
+    coordocam$Camera=as.character(coordocam$Camera)
+    donneesdf1$Camera=as.character(donneesdf1$Camera) 
+    donneesdf3 = left_join(donneesdf1,coordocam, by = c("Camera" = "Camera"))
+    donneesdf3
+  })
+  
+  
+  # Download du csv pour la richesse spé et les espèces EN et CR IUCN
+  output$downloadCSV1 <- downloadHandler(
+    filename = paste("Richesse_IUCN.csv"),
+    content = function(file) {
+      write.table(donnees_cartes_richesse_spe_df(), file,quote = TRUE, sep = ";",dec=".",row.names = FALSE, col.names = TRUE)
+    } 
+    
+  )
+  
+  # Download du csv pour le RAI et l'abondance
+  output$downloadCSV2 <- downloadHandler(
+    filename = paste("RAI_abondance",input$selectSp, '.csv', sep=' '),
+    content = function(file) {
+      write.table(donnees_cartes_abun_df(), file,quote = TRUE, sep = ";",dec=".",row.names = FALSE, col.names = TRUE)
+    } 
     
   )
   
