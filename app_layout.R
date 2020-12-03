@@ -896,6 +896,15 @@ server <- function(input, output, session) {
   
   # Traitement et préparation des données utiles aux cartes d'abondance et de richesse 
   
+  observe({
+    updateSelectizeInput(
+      session,
+      inputId = "selectSp_carto",
+      choices = c("All", data()$Species),
+      selected = "All"
+    )  
+  })
+  
   EPSG <- reactive ({
     as.numeric(input$epsg)
   })
@@ -970,13 +979,6 @@ server <- function(input, output, session) {
     
   })
   
-  observe({
-    updateSelectizeInput(
-      session,
-      inputId = "selectSp_carto",
-      choices = c("All", data()$Species)
-    )  
-  })
   
   donnees_cartes_abun <- reactive ({
     
@@ -1003,7 +1005,7 @@ server <- function(input, output, session) {
     # On commence par calculer le nb d'individus observés par caméra, dans un nouveau df
     nind_cam <- aggregate(Individuals ~ Camera, data = dfinal, sum)
     # On renomme la colonne Effcam
-    nind_cam <- rename(nind_cam,"EffCam"="Individuals") 
+    nind_cam <- rename(nind_cam,"Tot_individuals_cam"="Individuals") 
     # On joint alors la colonne EffCam contenan le nb d'indiv/cam au d.f portant sur le nb d'individus d'une espèce sélectionnée
     nb_indiv_cam_selectesp <- merge(nb_indiv_selectesp,nind_cam,by="Camera",all.x=T)
     req(coordcam())
@@ -1245,7 +1247,7 @@ server <- function(input, output, session) {
   
   output$downloadMap3 <- downloadHandler(
     # filename pour définir le nom par défaut du fichier produit, Content pour choisir le graph dans l'image
-    filename = function() {paste("Map_RAI",input$selectSp, '.png', sep=' ') },
+    filename = function() {paste("Map_RAI",input$selectSp_carto, '.png', sep=' ') },
     content = function(file) {
       
       ggsave(file,plot=carte_abon_paresp1(),width=18,height = 6)
@@ -1293,7 +1295,7 @@ server <- function(input, output, session) {
   
   # Download du csv pour le RAI et l'abondance
   output$downloadCSV2 <- downloadHandler(
-    filename = paste("RAI_abondance",input$selectSp, '.csv', sep=' '),
+    filename = paste("RAI_abondance",input$selectSp_carto, '.csv', sep=' '),
     content = function(file) {
       write.table(donnees_cartes_abun_df(), file,quote = TRUE, sep = ";",dec=".",row.names = FALSE, col.names = TRUE)
     } 
