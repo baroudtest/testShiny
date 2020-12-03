@@ -52,6 +52,8 @@ library(shinydashboard)
 #install.packages("shinydashboard")
 library(DT)
 #install.packages("DT")
+library(dplyr)
+#install.packages("dplyr")
 
 #-------------------------------
 #-------------------------------
@@ -284,7 +286,8 @@ ui <- dashboardPage(
                                               selected = ""),
                                selectizeInput(inputId = "selectLoc_graph",
                                               label = "Sélection du site",
-                                              choices = ""),
+                                              choices = "",
+                                              selected =""),
                                withSpinner(plotOutput("graph24h")),
                                downloadButton("downloadGraph", "Download Graph")
                       ),
@@ -782,7 +785,6 @@ server <- function(input, output, session) {
   tableEsp <- reactive({
     req(input$selectSp_tab, input$selectLoc_tab)
     
-    ###
     #Tentative de caser le ALL
     if(input$selectSp_tab == "All")
       selesp <- as.data.frame(data()$Species)
@@ -798,10 +800,24 @@ server <- function(input, output, session) {
                               row.names = NULL)
     colnames(selloc) <- "Site"
     #bondocde
-    nb <- aggregate(Individuals ~ Species+Site, data = data(), sum)
-    jours <- aggregate(Individuals ~ Species+Site+Date, data = data(), sum) # ! colonne site ou choix prealable ?
-    nj <- aggregate(Date ~ Species+Site, data = jours, length)
-    table <- merge(nb,nj,by=c("Species","Site"))
+    observe({
+    if(input$selectLoc_tab == "All")
+      {
+      nb <- aggregate(Individuals ~ Species, data = data(), sum)
+      data() <- subset(data(), select = -Site)
+      data()$Site <- rep("All", length(data()$Species))
+      jours <- aggregate(Individuals ~ Species+Site+Date, data = data(), sum) # ! colonne site ou choix prealable ?
+      nj <- aggregate(Date ~ Species+Site, data = jours, length)
+      table <- merge(nb,nj,by=c("Species"))
+      table <- table[,c("Species", "Site", "Individuals", "Date")]
+      }
+    else {
+      nb <- aggregate(Individuals ~ Species+Site, data = data(), sum)
+      jours <- aggregate(Individuals ~ Species+Site+Date, data = data(), sum) # ! colonne site ou choix prealable ?
+      nj <- aggregate(Date ~ Species+Site, data = jours, length)
+      table <- merge(nb,nj,by=c("Species","Site"))
+    }
+    })
     if(input$selectLoc_tab != "All")
       table <- merge(table, selloc, by = "Site")
     if(input$selectSp_tab != "All")
@@ -813,8 +829,7 @@ server <- function(input, output, session) {
     table <- merge(table,IUCN(),by="Species",all.x=T)
     names(table) <- c("Espèce","Site","Nombre d'individus","Taux de détection (nb par jour)",
                       "Abondance relative (en %)","Statut IUCN")
-    table
-  })
+    table  })
   
   output$ab_rel <- renderTable({
     tableEsp()
@@ -1245,15 +1260,17 @@ server <- function(input, output, session) {
   
   graph24 <- reactive ({
     # récupérer l'espèce encodée 
+    df <- data()
+    
     k <- as.character(input$selectLoc_graph)
     
     x <- as.character(input$selectSp_graph)
     
     # récupérer le dataframe nettoyé
-    df <- data()
+    #df <- data()
     # si "All" est encodé, graphique de toute les epsèces, si le nome d'une espèe est encodé, le prend en compte
-    if (input$SelectLoc_graph != "All")
-      df <- df[df$Site == k,]
+    if(input$selectLoc_graph != "All")
+     df <- df[df$Site == k,]
     
     if (input$selectSp_graph != "All")
       df <- df[df$Species == x,]
