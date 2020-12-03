@@ -800,13 +800,13 @@ server <- function(input, output, session) {
                               row.names = NULL)
     colnames(selloc) <- "Site"
     #bondocde
-    observe({
     if(input$selectLoc_tab == "All")
       {
       nb <- aggregate(Individuals ~ Species, data = data(), sum)
-      data() <- subset(data(), select = -Site)
-      data()$Site <- rep("All", length(data()$Species))
-      jours <- aggregate(Individuals ~ Species+Site+Date, data = data(), sum) # ! colonne site ou choix prealable ?
+      data_alt <- data()
+      data_alt <- subset(data_alt, select = -Site)
+      data_alt$Site <- rep("All", length(data_alt$Species))
+      jours <- aggregate(Individuals ~ Species+Site+Date, data = data_alt, sum) # ! colonne site ou choix prealable ?
       nj <- aggregate(Date ~ Species+Site, data = jours, length)
       table <- merge(nb,nj,by=c("Species"))
       table <- table[,c("Species", "Site", "Individuals", "Date")]
@@ -817,7 +817,6 @@ server <- function(input, output, session) {
       nj <- aggregate(Date ~ Species+Site, data = jours, length)
       table <- merge(nb,nj,by=c("Species","Site"))
     }
-    })
     if(input$selectLoc_tab != "All")
       table <- merge(table, selloc, by = "Site")
     if(input$selectSp_tab != "All")
