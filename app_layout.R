@@ -30,8 +30,6 @@ library(gdalUtils)
 #install.packages("gdalUtils")
 library(ggrepel)
 #install.packages("ggrepel")
-library(ggspatial)
-#install.packages("ggspatial")
 library(units)
 #install.packages("units")
 library(purrr)
@@ -50,10 +48,6 @@ library(data.table)
 #install.packages("data.table")
 library(shinydashboard)
 #install.packages("shinydashboard")
-library(DT)
-#install.packages("DT")
-library(dplyr)
-#install.packages("dplyr")
 
 #-------------------------------
 #-------------------------------
@@ -254,7 +248,7 @@ ui <- dashboardPage(
               fluidRow(
                 box(title = "Tableau analytique",
                     width = 6,
-                    height = 900,
+                    #height = 900,
                     status = "warning",
                     solidHeader = T,
                     p(style = "text-align:justify;",
