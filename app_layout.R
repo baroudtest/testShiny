@@ -208,6 +208,7 @@ ui <- dashboardPage(
                     solidHeader = T,
                     "Vous trouverez ci-dessous un tableau récapitulatif de la communauté détectée durant votre/vos inventaire(s).",
                     br(),
+                    actionButton("info","Info"),
                     div(style ='overflow-x:scroll',
                         withSpinner(tableOutput("richesse"))),
                     downloadButton("downloadCom", "Download")
@@ -269,6 +270,7 @@ ui <- dashboardPage(
                                    label = "Sélection du site",
                                    choices = "",
                                    multiple = TRUE),
+                    actionButton("infoTableEsp","Info"),
                     div(style = 'overflow-y:scroll;height:520px',
                         withSpinner(tableOutput("ab_rel"))),
                     downloadButton("downloadData", "Download")
@@ -551,12 +553,89 @@ server <- function(input, output, session) {
     showModal(modalDialog(
       title = "fichier non conforme",
       paste("Le fichier chargé ne correspond pas au format requis. veuillez charger une table de données conforme pour obtenir vos résultats. ", sep=""),
+      br(),
+      paste(err()[1]),
+      br(),
+      paste(err()[2]),
+      br(),
+      paste(err()[3]),
+      br(),
+      paste(err()[4]),
+      br(),
+      paste(err()[5]),
+      br(),
+      paste(err()[6]),
+      br(),
+      paste(err()[7]),
+      br(),
       footer = modalButton("Fermer")
     ))
   })
   
   
+  #Message d'information du tableau par communauté
   
+ observeEvent(input$info, {
+    showModal(modalDialog(
+      title = "Information du tableau récapitulatif de la communauté",
+      paste("Ce tableau reprend des informations générales sur votre campagne d'inventaire.", sep =""),
+      br(),
+      br(),
+      paste("Celles-ci sont reprises pour chaque site étudié", sep =""),
+      br(),
+      br(),
+      paste("Les informations regroupées dans les différentes colonnes du tableau sont les suivantes : ", sep =""),
+      br(),
+      br(),
+      paste("Le Site tel que repris dans la table de donnée chargée", sep =""),
+      br(),
+      br(),
+      paste("Le nombre de caméras déployées pour le site concerné", sep =""),
+      br(),
+      br(),
+      paste("L'effort d'inventaire repris en caméra-jours. Cette information est obtenue en additionnant le nombre de jours de déployement respectif de chaque caméra installée sur le site concerné", sep =""),
+      br(),
+      br(),
+      paste("La richesse spécifique ou richesse en espèce. Il s'agit du nombre d'espèces différentes identifiées pour le site concerné", sep = ""),
+      br(),
+      br(),
+      paste("Le nombre d'espèces menacées. La determination des espèces menacées se fait en se basant sur le fichier des statuts fournis sur le site FauneFAC. Celui-ci se basant initialement sur la liste rouge de L'UICN.  ", sep = ""),
+      br(),
+      paste("Les espèces reprises dans ce calcul sont celles considérées comme 'EN' (en danger) ou 'CR' (en danger critique)", sep = ""),
+      footer = modalButton("Fermer")
+      
+    ))
+    
+  })
+  
+ 
+ observeEvent(input$infoTableEsp, {
+   showModal(modalDialog(
+     title = "Information du tableau récapitulatif par espèces",
+     paste("Ce tableau reprend par colonne des informations concernant chaque espèce prise individuelement. Les informations reprises sont les suivantes :", sep= ""),
+     br(),
+     br(),
+     paste("Test", sep= ""),
+     br(),
+     br(),
+     paste("Test", sep= ""),
+     br(),
+     br(),
+     paste("Test", sep= ""),
+     br(),
+     br(),
+     paste("Test", sep= ""),
+     br(),
+     br(),
+     paste("Test", sep= ""),
+     br(),
+     br(),
+     footer = modalButton("Fermer")
+     
+   ))
+   
+ })
+ 
   # Traitement des données de la partie communauté --------------------------------------
   # table des informations sur les communautés par site 
   tableCom <- reactive({
