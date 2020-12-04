@@ -288,8 +288,10 @@ ui <- dashboardPage(
                                               label = "Sélection du site",
                                               choices = "",
                                               selected =""),
+                               actionButton("infoRythmeActiv","Info"),
                                withSpinner(plotOutput("graph24h")),
-                               downloadButton("downloadGraph", "Download Graph")
+                               downloadButton("downloadGraph", "Télécharger le Graphique en .png"),
+                               downloadButton("downloadGraphSVG", "Télécharger le Graphique en .SVG")
                       ),
                       
                       tabPanel(title = "Carte d'abondance par espèce",
@@ -524,15 +526,25 @@ server <- function(input, output, session) {
   })
   
   
-  observeEvent(input$file, {
+  observeEvent(EspecesRatee(), {
     showModal(modalDialog(
       title = "Vérification des noms d'espèces",
-      paste("L'application ne reconnait pas les espèces suivantes : ",noms(),". 
-      Cela est dû au format incorrect du nom de l'espèce dans votre jeu de données. 
+      paste("L'application ne reconnait pas les espèces suivantes :", sep =""),
+      br(),
+      br(),
+      paste(noms()),
+      br(),
+      br(),
+      paste("Cela est dû au format incorrect du nom de l'espèce dans votre jeu de données. 
       Veuillez vous référer aux noms scientifiques présents sur le site de l'IUCN, remplacez-les dans 
-      votre jeu de données et rechargez vos fichiers. Si le problème persiste après avoir modifié les noms, 
-      cela signifie que l'espèce n'est pas présente dans notre base de données. 
-      Vous pouvez alors l'ajouter vous même dans le fichier statuts.csv et relancer l'application. 
+      votre jeu de données et rechargez vos fichiers."),
+      br(),
+      br(),
+      paste("Si le problème persiste après avoir modifié les noms, 
+      cela signifie que l'espèce n'est pas présente dans notre base de données. "),
+      br(),
+      br(),
+      paste("Vous pouvez alors l'ajouter vous même dans le fichier statuts.csv et relancer l'application. 
       Les analyses fournies restent valables, mais les espèces restantes dans cette liste ne pourront pas 
       être prises en compte dans le recensement et la répartition des espèces menacées.", sep=""),
       footer = modalButton("Fermer")
@@ -609,7 +621,12 @@ server <- function(input, output, session) {
      paste("Ce tableau reprend par colonne des informations concernant chaque espèce prise individuelement. Les informations reprises sont les suivantes :", sep= ""),
      br(),
      br(),
-     paste("Test", sep= ""),
+     paste("Le nom des ou de l'espèce(s) tel que demandé dans la boite 'Sélection de l'espèce'", sep= ""),
+     br(),
+     br(),
+     paste("Le Site pour lequel les observations et calculs sont faits. Ces sites sont sélectionnés dans la boite 'Sélection du site'", sep= ""),
+     br(),
+     paste("Si plusieurs site sont sélectionnés, certaines espèces partagée entre eux se retrouveront plusieurs fois dans ce tableau avec les données obtenues pour chacun des sites respectifs", sep= ""),
      br(),
      br(),
      paste("Test", sep= ""),
@@ -624,11 +641,30 @@ server <- function(input, output, session) {
      paste("Test", sep= ""),
      br(),
      br(),
+     paste("Le Statut UICN tel que repris dans le fichier téléchargeable sur le site internet FauneFAC", sep= ""),
+     br(),
+     paste("Si votre escpèce ne se retrouve pas dans la liste fournie, le statut suivant sera indiqué 'NA'. ", sep= ""),
+     br(),
+     paste("Si l'espèce est contenue dans le fichier mais qu'elle n'est pas reprise dans la liste de l'UICN, le statut suivant sera indiqué 'NA*'", sep= ""),
      footer = modalButton("Fermer")
      
    ))
    
  })
+ 
+ 
+ observeEvent(input$infoRythmeActiv, {
+   showModal(modalDialog(
+     title = "Information Rythme d'activité",
+     paste("Le Graphique du rythme d'activité reprends par heure la somme des individus observés pour le site et l'espèce concernée ", sep =""),
+     br(),
+     paste("Ce graphique permet de renseigner les heures d'activité prédominante chez l'espèce observée dans le site demandé", sep =""),
+     footer = modalButton("Fermer")
+     
+   ))
+   
+ })
+ 
  
   # Traitement des données de la partie communauté --------------------------------------
   # table des informations sur les communautés par site 
@@ -1398,7 +1434,7 @@ server <- function(input, output, session) {
   
   # Création du graphique d'activité en 24h en réactive de façon à pouvoir le télécharger -----------------
   
-  graph24 <- reactive ({
+  graph24 <- function (){
     # récupérer l'espèce encodée 
     df <- data()
     
@@ -1436,7 +1472,7 @@ server <- function(input, output, session) {
                                                                                   24))
     
     frete
-  })
+  }
   
   # Encodage du graphique réactif en output de manière à l'afficher
   output$graph24h <- renderPlot({
@@ -1461,6 +1497,20 @@ server <- function(input, output, session) {
       png(file)
       print(graph24())
       dev.off() 
+    }
+    
+  )
+  
+  ######### 
+  # Test de DL en .SVG
+  output$downloadGraphSVG <- downloadHandler(
+    # filename pour définir le nom par défaut du fichier produit, Content pour choisir le graph dans l'image
+    filename = function() {paste(input$selectSp_graph,"graph24", '.svg', sep='') },
+    content = function(file) {
+      
+    svg(file)
+    print(graph24())
+    dev.off()
     }
     
   )
@@ -1634,6 +1684,12 @@ server <- function(input, output, session) {
     1
   })
   
+  EspecesRatee <- reactive({
+    req(input$file)
+    req(input$status)
+    
+    1
+  })
 }
 
 ## Run the app ---------------------------------------------------
