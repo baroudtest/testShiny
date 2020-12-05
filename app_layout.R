@@ -364,14 +364,27 @@ server <- function(input, output, session) {
   })
   # Trouver une solution : st_read est pas supporté par shiny, il plante et dit que le fichier est corrompu...
   
-  coordcam <- reactive({
-    
+
+  
+  infoCam <- reactive({
     req(input$infocam)
     infocamera <- read.csv(input$infocam$datapath,
                            header = TRUE,
                            sep = ";",
                            quote = '"',
                            colClasses = "character")
+    
+    
+    
+    names(infocamera) <- c("Camera","Notes","Serial","X","Y","Z","Jours","utm_x","utm_y")
+    infocamera
+    
+  })
+  
+  coordcam <- reactive({
+    
+    req(input$infocam)
+    infocamera <- infoCam()
     
     infocamera$utm_x <- as.numeric(infocamera$utm_x)
     infocamera$utm_y <- as.numeric(infocamera$utm_y)
@@ -379,18 +392,10 @@ server <- function(input, output, session) {
     infocamera1
   })
   
-  CameraJour <- reactive({
+  CameraJour <- reactive({   ### ! Note + Verif colonnes + utiliser directement infoCam()################
     req(input$infocam)
     req(data())
-    infocamera <- read.csv(input$infocam$datapath,
-                           header = TRUE,
-                           sep = ";",
-                           quote = '"',
-                           colClasses = "character")
-    
-    
-    
-    names(infocamera) <- c("Camera","Notes","Serial","X","Y","Z","Jours","Utx","Uty")
+    infocamera <- infoCam()
     
     
     test <- merge(infocamera,data(), by = "Camera")
@@ -402,6 +407,8 @@ server <- function(input, output, session) {
     fin
     
   })
+  
+  
   data <- reactive({
     
     req(input$file)
@@ -957,18 +964,18 @@ server <- function(input, output, session) {
     #bondocde
     if(input$selectLoc_tab == "All")
       {
-      nb <- aggregate(Individuals ~ Species, data = data(), sum)
+      nb <- aggregate(Individuals ~ Species, data = data(), length)
       data_alt <- data()
       data_alt <- subset(data_alt, select = -Site)
       data_alt$Site <- rep("All", length(data_alt$Species))
-      jours <- aggregate(Individuals ~ Species+Site+Date, data = data_alt, sum) # ! colonne site ou choix prealable ?
+      jours <- aggregate(Individuals ~ Species+Site+Date, data = data_alt, sum) 
       nj <- aggregate(Date ~ Species+Site, data = jours, length)
       table <- merge(nb,nj,by=c("Species"))
       table <- table[,c("Species", "Site", "Individuals", "Date")]
       }
     else {
       nb <- aggregate(Individuals ~ Species+Site, data = data(), sum)
-      jours <- aggregate(Individuals ~ Species+Site+Date, data = data(), sum) # ! colonne site ou choix prealable ?
+      jours <- aggregate(Individuals ~ Species+Site+Date, data = data(), sum) 
       nj <- aggregate(Date ~ Species+Site, data = jours, length)
       table <- merge(nb,nj,by=c("Species","Site"))
     }
@@ -1060,8 +1067,8 @@ server <- function(input, output, session) {
     req(coordcam())
     infos_cam <- coordcam()
     
-    infos_cam$name <- as.character(infos_cam$name)
-    infos_cam1 = dplyr::select(infos_cam,utm_x:utm_y,Camera = name)
+    infos_cam$Camera <- as.character(infos_cam$Camera)
+    infos_cam1 = dplyr::select(infos_cam,utm_x:utm_y,Camera)
     
     
     infos_cam1$Camera=as.character(infos_cam1$Camera)
@@ -1121,10 +1128,10 @@ server <- function(input, output, session) {
     nb_indiv_cam_selectesp <- merge(nb_indiv_selectesp,nind_cam,by="Camera",all.x=T)
     req(coordcam())
     infos_cam <- coordcam()
-    infos_cam$name <- as.character(infos_cam$name)
-    infos_cam2 <- dplyr::select(infos_cam,duration,Camera = name)
+    infos_cam$Camera <- as.character(infos_cam$Camera)
+    infos_cam2 <- dplyr::select(infos_cam,Jours,Camera)
     nb_indiv_cam_selectesp <- merge(nb_indiv_cam_selectesp,infos_cam2,by="Camera",all.x=T)
-    nb_indiv_cam_selectesp$RAI <- as.numeric((nb_indiv_cam_selectesp$Individuals))/as.numeric((nb_indiv_cam_selectesp$duration))
+    nb_indiv_cam_selectesp$RAI <- as.numeric((nb_indiv_cam_selectesp$Individuals))/as.numeric((nb_indiv_cam_selectesp$Jours))
     # On défini la colonne abuntot comme l'abondance relative totale de l'espèce sélectionnée pour une caméra donnée.
     # On défini la colonne abuncam comme l'abondance relative partielle (rapport non pas avec le nb tot d'individus, mais avec le nb 
     # d'indiv pour cette caméra)
@@ -1132,7 +1139,7 @@ server <- function(input, output, session) {
     nb_indiv_cam_selectesp$abondance_rel <- as.numeric(nb_indiv_cam_selectesp$Individuals)/as.numeric(nb_indiv_cam_selectesp$Tot_individuals_cam)*100
     
     # On recommmence la manip précédente pour la jointure des coordonnées et transformation en df.sf :
-    infos_cam1 = dplyr::select(infos_cam,utm_x:utm_y,Camera = name)
+    infos_cam1 = dplyr::select(infos_cam,utm_x:utm_y,Camera)
     
     infos_cam1$Camera=as.character(infos_cam1$Camera)
     nb_indiv_cam_selectesp$Camera=as.character(nb_indiv_cam_selectesp$Camera) # On transforme les valeurs des champs Camera en character afin de pouvoir effectuer la jointure
@@ -1374,7 +1381,7 @@ server <- function(input, output, session) {
     req(coordcam())
     coordocam <- coordcam()
     donneesdf = as.data.frame(st_drop_geometry(donneesf))
-    coordocam = dplyr::select(coordocam,utm_x:utm_y,Camera = name)
+    coordocam = dplyr::select(coordocam,utm_x:utm_y,Camera)
     coordocam$Camera=as.character(coordocam$Camera)
     donneesdf$Camera=as.character(donneesdf$Camera) 
     donneesdf2 = left_join(donneesdf,coordocam, by = c("Camera" = "Camera"))
@@ -1387,8 +1394,8 @@ server <- function(input, output, session) {
     req(coordcam())
     coordocam <- coordcam()
     donneesdf1 = as.data.frame(st_drop_geometry(donneesf1))
-    coordocam = dplyr::select(coordocam,utm_x:utm_y,Camera = name)
-    coordocam$Camera=as.character(coordocam$Camera)
+    coordocam = dplyr::select(coordocam,utm_x:utm_y,Camera)
+    coordocam$name=as.character(coordocam$Camera)
     donneesdf1$Camera=as.character(donneesdf1$Camera) 
     donneesdf3 = left_join(donneesdf1,coordocam, by = c("Camera" = "Camera"))
     donneesdf3
