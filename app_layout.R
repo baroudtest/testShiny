@@ -968,28 +968,31 @@ server <- function(input, output, session) {
       data_alt <- data()
       data_alt <- subset(data_alt, select = -Site)
       data_alt$Site <- rep("All", length(data_alt$Species))
-      jours <- aggregate(Individuals ~ Species+Site+Date, data = data_alt, sum) 
-      nj <- aggregate(Date ~ Species+Site, data = jours, length)
+      nj <- data.frame(nb$Species,rep(sum(CameraJour()$Jours),length(nb$Species)))
+      names(nj) <- c("Species","Jours")
       table <- merge(nb,nj,by=c("Species"))
-      table <- table[,c("Species", "Site", "Individuals", "Date")]
+      nmoy <- aggregate(Individuals ~ Species+Site, data = data_alt, mean)
+      names(nmoy) <- c("Species","Site","nmoy")
+      table <- merge(table,nmoy,by="Species")
       }
     else {
       nb <- aggregate(Individuals ~ Species+Site, data = data(), sum)
-      jours <- aggregate(Individuals ~ Species+Site+Date, data = data(), sum) 
-      nj <- aggregate(Date ~ Species+Site, data = jours, length)
+      jours <- CameraJour()
+      nj <- merge(nb,jours,by="Site")[,c("Species","Site","Jours")]
       table <- merge(nb,nj,by=c("Species","Site"))
+      nmoy <- aggregate(Individuals ~ Species+Site, data = data(), mean)
+      names(nmoy) <- c("Species","Site","nmoy")
+      table <- merge(table,nmoy,by=c("Species","Site"))
     }
     if(input$selectLoc_tab != "All")
       table <- merge(table, selloc, by = "Site")
     if(input$selectSp_tab != "All")
       table <- merge(table, selesp, by = "Species")
-    table$Date <- table$Individuals/table$Date
-    tot <- sum(data()$Individuals)
-    ab <- (table$Individuals/tot)*100
-    table <- cbind(table,ab)
+    table$Jours <- table$Individuals/table$Jours
+    table <- table[,c("Species","Site","Individuals","Jours","nmoy")]
     table <- merge(table,IUCN(),by="Species",all.x=T)
-    names(table) <- c("Espèce","Site","Nombre d'individus","Taux de détection (nb par jour)",
-                      "Abondance relative (en %)","Statut IUCN")
+    names(table) <- c("Espèce","Site","Nombre de détections","Taux de détection (RAI)",
+                      "Nombre moyen d'individus par détection","Statut IUCN")
     table  })
   
   output$ab_rel <- renderTable({
