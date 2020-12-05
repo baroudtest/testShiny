@@ -676,7 +676,7 @@ server <- function(input, output, session) {
   # Traitement des données de la partie communauté --------------------------------------
   # table des informations sur les communautés par site 
   tableCom <- reactive({
-    effort <- aggregate(Individuals ~ Site, data = data(), sum)
+    effort <- CameraJour()
     ncam <- aggregate(Individuals ~ Site+Camera, data = data(), sum)
     ncam <- aggregate(Individuals ~ Site, data = ncam, length)
     tab1 <- merge(ncam,effort,by=c("Site","Site"),all=T)
@@ -685,7 +685,7 @@ server <- function(input, output, session) {
     tab1 <- merge(tab1,rich,by=c("Site","Site"),all=T)
     datEN <- merge(data(),IUCN(),by="Species",all.x=T)
     datEN <- subset(datEN,datEN$IUCN=="EN"|datEN$IUCN=="CR")
-    if(nrow(rich)>1){
+    if(nrow(datEN)>=1){
       EN <- aggregate(Individuals ~ Site+Species, data = datEN, sum)
       EN <- aggregate(Individuals ~ Site, data = EN, length)
       tab1 <- merge(tab1,EN,by=c("Site","Site"),all=T)
@@ -694,7 +694,7 @@ server <- function(input, output, session) {
     }
     names(tab1) <- c("Site","Nombre de caméras","Effort d'inventaire",
                      "Richesse spécifique","Nombre d'espèces menacées")
-    if(nrow(datEN)>=1){
+    if(nrow(rich)>1){
       n <- length(tab1$Site)
       tab1[n+1,1] <- "TOTAL"
       tab1[n+1,2] <- sum(tab1[-(n+1),2])
