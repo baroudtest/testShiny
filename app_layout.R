@@ -362,14 +362,27 @@ server <- function(input, output, session) {
   })
   # Trouver une solution : st_read est pas supporté par shiny, il plante et dit que le fichier est corrompu...
   
-  coordcam <- reactive({
-    
+
+  
+  infoCam <- reactive({
     req(input$infocam)
     infocamera <- read.csv(input$infocam$datapath,
                            header = TRUE,
                            sep = ";",
                            quote = '"',
                            colClasses = "character")
+    
+    
+    
+    names(infocamera) <- c("Camera","Notes","Serial","X","Y","Z","Jours","utm_x","utm_y")
+    infocamera
+    
+  })
+  
+  coordcam <- reactive({
+    
+    req(input$infocam)
+    infocamera <- infoCam()
     
     infocamera$utm_x <- as.numeric(infocamera$utm_x)
     infocamera$utm_y <- as.numeric(infocamera$utm_y)
@@ -377,18 +390,10 @@ server <- function(input, output, session) {
     infocamera1
   })
   
-  CameraJour <- reactive({
+  CameraJour <- reactive({   ### ! Note + Verif colonnes + utiliser directement infoCam()################
     req(input$infocam)
     req(data())
-    infocamera <- read.csv(input$infocam$datapath,
-                           header = TRUE,
-                           sep = ";",
-                           quote = '"',
-                           colClasses = "character")
-    
-    
-    
-    names(infocamera) <- c("Camera","Notes","Serial","X","Y","Z","Jours","Utx","Uty")
+    infocamera <- infoCam()
     
     
     test <- merge(infocamera,data(), by = "Camera")
@@ -400,6 +405,8 @@ server <- function(input, output, session) {
     fin
     
   })
+  
+  
   data <- reactive({
     
     req(input$file)
@@ -627,16 +634,17 @@ server <- function(input, output, session) {
      paste("Si plusieurs site sont sélectionnés, certaines espèces partagée entre eux se retrouveront plusieurs fois dans ce tableau avec les données obtenues pour chacun des sites respectifs", sep= ""),
      br(),
      br(),
-     paste("Test", sep= ""),
+     paste("Le nombre de détections. Ce chiffre reprends, pour le site concerné le nombre d'évènement indépendant pour lequel l'espèce apparait."),
+     br(),
+     paste("Par exemple un groupe de potamochères aperçut sur plusieurs vidéos proche l'une de l'autre dans le temps correspondra à une détection", sep= ""),
      br(),
      br(),
-     paste("Test", sep= ""),
+     paste("Le taux de détection ou RAI. Ce taux est calculé en reprenant le nombre de détection précédement définis pour le site concerné divisé par le nombre de caméra jours pour ce même site."),
+     br(),
+     paste("Le nombre de caméra jours est précédement définis dans le tableau 'Communauté' et correspond à la somme du temps de déployement en jour de chaque piège photographique placé sur le site.", sep= ""),
      br(),
      br(),
-     paste("Test", sep= ""),
-     br(),
-     br(),
-     paste("Test", sep= ""),
+     paste("Le nombre moyen d'individus par détection. Cette donnée est obtenue en reprenant chaque détection indépendante de l'espèce définie pour le site défini et en effectuant la moyenne du nombre d'individus détectés.", sep= ""),
      br(),
      br(),
      paste("Le Statut UICN tel que repris dans le fichier téléchargeable sur le site internet FauneFAC", sep= ""),
@@ -667,7 +675,7 @@ server <- function(input, output, session) {
   # Traitement des données de la partie communauté --------------------------------------
   # table des informations sur les communautés par site 
   tableCom <- reactive({
-    effort <- aggregate(Individuals ~ Site, data = data(), sum)
+    effort <- CameraJour()
     ncam <- aggregate(Individuals ~ Site+Camera, data = data(), sum)
     ncam <- aggregate(Individuals ~ Site, data = ncam, length)
     tab1 <- merge(ncam,effort,by=c("Site","Site"),all=T)
@@ -676,7 +684,7 @@ server <- function(input, output, session) {
     tab1 <- merge(tab1,rich,by=c("Site","Site"),all=T)
     datEN <- merge(data(),IUCN(),by="Species",all.x=T)
     datEN <- subset(datEN,datEN$IUCN=="EN"|datEN$IUCN=="CR")
-    if(nrow(rich)>1){
+    if(nrow(datEN)>=1){
       EN <- aggregate(Individuals ~ Site+Species, data = datEN, sum)
       EN <- aggregate(Individuals ~ Site, data = EN, length)
       tab1 <- merge(tab1,EN,by=c("Site","Site"),all=T)
@@ -685,7 +693,7 @@ server <- function(input, output, session) {
     }
     names(tab1) <- c("Site","Nombre de caméras","Effort d'inventaire",
                      "Richesse spécifique","Nombre d'espèces menacées")
-    if(nrow(datEN)>=1){
+    if(nrow(rich)>1){
       n <- length(tab1$Site)
       tab1[n+1,1] <- "TOTAL"
       tab1[n+1,2] <- sum(tab1[-(n+1),2])
@@ -955,32 +963,35 @@ server <- function(input, output, session) {
     #bondocde
     if(input$selectLoc_tab == "All")
       {
-      nb <- aggregate(Individuals ~ Species, data = data(), sum)
+      nb <- aggregate(Individuals ~ Species, data = data(), length)
       data_alt <- data()
       data_alt <- subset(data_alt, select = -Site)
       data_alt$Site <- rep("All", length(data_alt$Species))
-      jours <- aggregate(Individuals ~ Species+Site+Date, data = data_alt, sum) # ! colonne site ou choix prealable ?
-      nj <- aggregate(Date ~ Species+Site, data = jours, length)
+      nj <- data.frame(nb$Species,rep(sum(CameraJour()$Jours),length(nb$Species)))
+      names(nj) <- c("Species","Jours")
       table <- merge(nb,nj,by=c("Species"))
-      table <- table[,c("Species", "Site", "Individuals", "Date")]
+      nmoy <- aggregate(Individuals ~ Species+Site, data = data_alt, mean)
+      names(nmoy) <- c("Species","Site","nmoy")
+      table <- merge(table,nmoy,by="Species")
       }
     else {
       nb <- aggregate(Individuals ~ Species+Site, data = data(), sum)
-      jours <- aggregate(Individuals ~ Species+Site+Date, data = data(), sum) # ! colonne site ou choix prealable ?
-      nj <- aggregate(Date ~ Species+Site, data = jours, length)
+      jours <- CameraJour()
+      nj <- merge(nb,jours,by="Site")[,c("Species","Site","Jours")]
       table <- merge(nb,nj,by=c("Species","Site"))
+      nmoy <- aggregate(Individuals ~ Species+Site, data = data(), mean)
+      names(nmoy) <- c("Species","Site","nmoy")
+      table <- merge(table,nmoy,by=c("Species","Site"))
     }
     if(input$selectLoc_tab != "All")
       table <- merge(table, selloc, by = "Site")
     if(input$selectSp_tab != "All")
       table <- merge(table, selesp, by = "Species")
-    table$Date <- table$Individuals/table$Date
-    tot <- sum(data()$Individuals)
-    ab <- (table$Individuals/tot)*100
-    table <- cbind(table,ab)
+    table$Jours <- table$Individuals/table$Jours
+    table <- table[,c("Species","Site","Individuals","Jours","nmoy")]
     table <- merge(table,IUCN(),by="Species",all.x=T)
-    names(table) <- c("Espèce","Site","Nombre d'individus","Taux de détection (nb par jour)",
-                      "Abondance relative (en %)","Statut IUCN")
+    names(table) <- c("Espèce","Site","Nombre de détections","Taux de détection (RAI)",
+                      "Nombre moyen d'individus par détection","Statut IUCN")
     table  })
   
   output$ab_rel <- renderTable({
@@ -1058,8 +1069,8 @@ server <- function(input, output, session) {
     req(coordcam())
     infos_cam <- coordcam()
     
-    infos_cam$name <- as.character(infos_cam$name)
-    infos_cam1 = dplyr::select(infos_cam,utm_x:utm_y,Camera = name)
+    infos_cam$Camera <- as.character(infos_cam$Camera)
+    infos_cam1 = dplyr::select(infos_cam,utm_x:utm_y,Camera)
     
     
     infos_cam1$Camera=as.character(infos_cam1$Camera)
@@ -1119,10 +1130,10 @@ server <- function(input, output, session) {
     nb_indiv_cam_selectesp <- merge(nb_indiv_selectesp,nind_cam,by="Camera",all.x=T)
     req(coordcam())
     infos_cam <- coordcam()
-    infos_cam$name <- as.character(infos_cam$name)
-    infos_cam2 <- dplyr::select(infos_cam,duration,Camera = name)
+    infos_cam$Camera <- as.character(infos_cam$Camera)
+    infos_cam2 <- dplyr::select(infos_cam,Jours,Camera)
     nb_indiv_cam_selectesp <- merge(nb_indiv_cam_selectesp,infos_cam2,by="Camera",all.x=T)
-    nb_indiv_cam_selectesp$RAI <- as.numeric((nb_indiv_cam_selectesp$Individuals))/as.numeric((nb_indiv_cam_selectesp$duration))
+    nb_indiv_cam_selectesp$RAI <- as.numeric((nb_indiv_cam_selectesp$Individuals))/as.numeric((nb_indiv_cam_selectesp$Jours))
     # On défini la colonne abuntot comme l'abondance relative totale de l'espèce sélectionnée pour une caméra donnée.
     # On défini la colonne abuncam comme l'abondance relative partielle (rapport non pas avec le nb tot d'individus, mais avec le nb 
     # d'indiv pour cette caméra)
@@ -1130,7 +1141,7 @@ server <- function(input, output, session) {
     nb_indiv_cam_selectesp$abondance_rel <- as.numeric(nb_indiv_cam_selectesp$Individuals)/as.numeric(nb_indiv_cam_selectesp$Tot_individuals_cam)*100
     
     # On recommmence la manip précédente pour la jointure des coordonnées et transformation en df.sf :
-    infos_cam1 = dplyr::select(infos_cam,utm_x:utm_y,Camera = name)
+    infos_cam1 = dplyr::select(infos_cam,utm_x:utm_y,Camera)
     
     infos_cam1$Camera=as.character(infos_cam1$Camera)
     nb_indiv_cam_selectesp$Camera=as.character(nb_indiv_cam_selectesp$Camera) # On transforme les valeurs des champs Camera en character afin de pouvoir effectuer la jointure
@@ -1372,7 +1383,7 @@ server <- function(input, output, session) {
     req(coordcam())
     coordocam <- coordcam()
     donneesdf = as.data.frame(st_drop_geometry(donneesf))
-    coordocam = dplyr::select(coordocam,utm_x:utm_y,Camera = name)
+    coordocam = dplyr::select(coordocam,utm_x:utm_y,Camera)
     coordocam$Camera=as.character(coordocam$Camera)
     donneesdf$Camera=as.character(donneesdf$Camera) 
     donneesdf2 = left_join(donneesdf,coordocam, by = c("Camera" = "Camera"))
@@ -1385,8 +1396,8 @@ server <- function(input, output, session) {
     req(coordcam())
     coordocam <- coordcam()
     donneesdf1 = as.data.frame(st_drop_geometry(donneesf1))
-    coordocam = dplyr::select(coordocam,utm_x:utm_y,Camera = name)
-    coordocam$Camera=as.character(coordocam$Camera)
+    coordocam = dplyr::select(coordocam,utm_x:utm_y,Camera)
+    coordocam$name=as.character(coordocam$Camera)
     donneesdf1$Camera=as.character(donneesdf1$Camera) 
     donneesdf3 = left_join(donneesdf1,coordocam, by = c("Camera" = "Camera"))
     donneesdf3
@@ -1685,7 +1696,7 @@ server <- function(input, output, session) {
   EspecesRatee <- reactive({
     req(input$file)
     req(input$status)
-    
+    req(paste(noms()) != 'character(0)')
     1
   })
 }
