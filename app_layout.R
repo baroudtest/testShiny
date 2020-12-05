@@ -1698,7 +1698,7 @@ server <- function(input, output, session) {
   EspecesRatee <- reactive({
     req(input$file)
     req(input$status)
-    
+    req(paste(noms()) != 'character(0)')
     1
   })
 }
