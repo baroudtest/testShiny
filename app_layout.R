@@ -1059,10 +1059,10 @@ server <- function(input, output, session) {
     # On cherche à inclure le statut IUCN 
     # On lie la table initiale à la table IUCN par l'espèce (ainsi on à le statut pour chaque espèce présente dans la liste)
     req(IUCN())
-    IUCN <- IUCN()
-    datEN <- merge(dfinal,IUCN,by="Species",all.x=T)
+    UICN <- IUCN()
+    datEN <- merge(dfinal,UICN,by="Species",all.x=T)
     # On ne garde dans un nouveau d.f que les individus qui ont un statut IUCN EN ou CR.
-    datEN <- subset(datEN,datEN$IUCN=="EN"|datEN$IUCN=="CR")
+    datEN <- dplyr::filter(datEN, IUCN=="EN" | IUCN=="CR")
     # On aggrège alors les nb d'indiv par espèce et par caméra.
     EN <- aggregate(Individuals ~ Species + Camera, data = datEN, sum)
     # On aggrège le nombre d'entrées par caméra pour obtenir le nb d'esp en danger (CR ou EN) par caméra.
@@ -1264,11 +1264,161 @@ server <- function(input, output, session) {
   )
   
   
-  # Préparation des données pour export csv :
+  # Création des données et export csv selon les envies de Davy : ----------------------------
   
+  # On crée d'abord la matrice espèce/caméra/nb d'indiv pour ces champs :
+  mat <- reactive({
+  # On va chercher le fichier de données
+  req(data())
+  dfinal <- data()
+  # On crée à présent la matrice nb d'indiv par caméra et par espèce : 
+  # Pour celà, on s'assure d'abord bien que les champs Camera et Species sont des character : 
+  dfinal$Camera <- as.character(dfinal$Camera)
+  dfinal$Species <- as.character(dfinal$Species)
+  # Ensuite, on veut faire de ces champs des facteurs pour construire la matrice. 
+  #Pour celà, comme on veut que le facteur ait le même nombre de valeurs que de niveaux, 
+  # on aggrège les donnée des espèces et des caméras séparément et on les transforme en facteurs
+  # avec autant de niveaux que de valeurs :
+  cam <- aggregate(Individuals ~ Camera, data=dfinal, sum)    
+  camvec <- factor(cam$Camera)
+  spec <- aggregate(Individuals ~ Species, data=dfinal, sum)
+  speciesvec <- factor(spec$Species)
+  # On extrait de ces facteurs/vecteurs le nombre de niveaux pour réaliser les boucles de 
+  # remplissage de la matrice :
+  nivcamvec <- as.numeric(nlevels(camvec))
+  nivspeciesvec <- as.numeric(nlevels(speciesvec))
   
+  # On intitialise alors les boucles en créant une matrice X avec autant de colonnes que de 
+  # niveaux pour le facteur espèce et autant de lignes que de niveaux pour le facteur caméra.
+  # Enfin, on initialise également les valeurs i et j qui permettent de faire tourner la boucle : 
   
+  # X à pour noms de colonnes les noms d'espèces et pour noms de lignes les noms de caméras.
+  X = matrix(data=0, nrow=nivcamvec, ncol=nivspeciesvec)
+  colnames(X) <- as.character(levels(speciesvec))
+  rownames(X) <- as.character(levels(camvec))
+  j=1
+  i=1
+  
+  # La boucle de remplissage est comme ci-après, pour chaque colone (= chaque espèce = chaque niveaux du facteur espèce)
+  # on va réaliser une écriture du nombre d'individus de telle caméra, et passer à la caméra 
+  # suivante jusqu'à finir la colonne, et passer à la colonne suivante, etc...
+  # Les écritures se font par filtration des entrées qui concernent une espèce et une caméra 
+  # en particulier. S'il n'y à aucune entrée correspondante, on attribue à la case matricielle 
+  # un numérique = 0. Sinon, on attribue à cette case le nombre d'individus sommés de chaque entrées.
+  for (i in 1:nivspeciesvec) {
+    for (j in 1:nivcamvec) {
+      sub <- subset(dfinal, dfinal$Species==speciesvec[i] & dfinal$Camera==camvec[j])
+      if (is.null(sum(sub$Individuals))) { X[j,i]=0}
+      else {X[j,i]=sum(sub$Individuals)}
+    }
+  }
+  
+  X <- as.data.frame(X)
+  setDT(X, keep.rownames = TRUE)[]
+  X <- rename(X, "Camera"="rn")
+  
+  X
+})
+  
+# Ensuite on crée un d.f richesse spécifique par caméra, selon une méthode analogue : 
+  richspecam <- reactive({
+    req(data())
+    dfinal <- data()
+    dfinal$Camera <- as.character(dfinal$Camera)
+    cam <- aggregate(Individuals ~ Camera, data=dfinal, sum)    
+    camvec <- factor(cam$Camera)
+    nivcamvec <- as.numeric(nlevels(camvec))
+    
+    Richmat = matrix(data=0, nrow=nivcamvec, ncol=1)
+    rownames(Richmat) <- as.character(levels(camvec))
+    colnames(Richmat) <- "Richesse"
+    for (i in 1:nivcamvec) {
+      tri <- dplyr::select(dfinal,Camera,Species)
+      sub1 <- subset(tri, tri$Camera==camvec[i])
+      sub1 <- factor(sub1$Species)
+      Richmat[i,1] <- nlevels(sub1)
+    }
+    
+    Rich <- as.data.frame(Richmat)
+    setDT(Rich, keep.rownames = TRUE)[]
+    Rich <- rename(Rich, "Camera"="rn")
+    
+    Rich
+  })
+  
+  # On calcule à présent les données concernant les sp en danger EN et CR (RAI et Nb d'espèces pour chaque caméra)
+  
+  RAI_nb_EN <- reactive ({
+  # On va d'abord chercher les données : 
+  req(data())
+  dfinal <- data()
+  req(IUCN())
+  IUCN <- IUCN()
+  # On joint les données IUCN au data par les noms d'espèces :
+  datEN <- merge(dfinal,IUCN,by="Species",all.x=T)
+  # On ne garde dans un nouveau d.f que les individus qui ont un statut IUCN EN ou CR.
+  datEN <- subset(datEN,datEN$IUCN=="EN"|datEN$IUCN=="CR")
+  # On aggrège le nombre d'entrées par caméra pour obtenir le nb d'esp en danger (CR ou EN)
+  # par caméra (avec les 2 aggregate ci_dessous)
+  EN <- aggregate(Individuals ~ Species + Camera, data = datEN, sum)
+  ENCAM <- aggregate (Individuals ~ Camera, data = EN, length)
+  # On renome la colonne individuals de ENCAM qui n'indique désormais plus que le nombre 
+  # d'espèce en danger CR ou EN
+  ENCAM <- rename(ENCAM,"N_espece_EN" = "Individuals")
+  # On aggrège datEN (qui contient les espèces en danger) selon 
+  # le nombre d'entrées par caméra pour obtenir le nb de détection
+  nbdetection <- aggregate(Individuals~Camera,data=datEN, length)
+  # On renomme à nouveau Individuals qui ne contient plus le nb d'individus, mais le nb de détections par cam
+  nbdetection <- rename(nbdetection,"NbdetEN"="Individuals")
+  # On colle le nb d'espèces en danger et le nb de détection d'espèces en danger par Caméra
+  donEN <- merge(nbdetection,ENCAM,by="Camera",all=T)
+  # On va chercher les infos des caméras pour jointure des coordonnées et calcul du RAI (durée de mise en fonction des caméra contenu dans coordcam)
+  req(coordcam())
+  infos_cam <- coordcam()
+  # On sélectionne les colonnes d'intérêt dans un nouveau df info_cam1
+  infos_cam1 <- dplyr::select(infos_cam,Camera,utm_x,utm_y,Jours)
+  infos_cam1$Jours <- as.numeric(infos_cam1$Jours)
+  # On s'assure que toutes les caméras sont bien écrites en character
+  infos_cam1$Camera=as.character(infos_cam1$Camera)
+  # On joint les données du fichier contenant les infos (Jours, utm_x et utm_y) aux autres infos (nb de dét et nb esp EN) par caméra
+  donEN <- merge(donEN,infos_cam1, by="Camera",all=T )
+  # On vire les NA pour les caméra qui n'ont aucune espèce EN ou CR et on les remplace par des 0
+  donEN[is.na(donEN)]<-0
+  # On crée une nouvelle colonne RAI pour les espèce EN et CR
+  donEN$RAI <- (donEN$NbdetEN/donEN$Jours)
+  
+  donEN
+})
+  
+  # Jointure des 3 tableaux de données pour obtenir le d.f final : 
+  tabexpmap <- reactive ({
+    # On va chercher le dernier tableau : 
+    req(RAI_nb_EN())
+    donEN <-  RAI_nb_EN()
+    # On sélectionne et renomme les colonne du dernier tableau pour la mise en forme finale :
+  donENfin <- dplyr::select(donEN,Camera,N_espece_EN,RAI_espece_EN = RAI, utm_x, utm_y)
+  # On à plus qu'à coller le d.f X au vecteur richesse, et joindre par après la matrice des sp EN et CR :
+  # On va chercher les deux tables : 
+  req(richspecam())
+  Richvec <- richspecam()
+  req(mat())
+  X <- mat()
+  # Dans un nouveau d.f, on lie la matrice 1 à la richesse spé par cam
+  Ok1 <- merge(X,Richvec,by="Camera",all.x=T)
+  Ok2 <- merge(Ok1,donENfin,by="Camera",all.x=T)
+  Ok2 <- rename(Ok2, "CT"="Camera")
+  
+  Ok2
+  })
  
+# Gestion du téléchargement du tableau GPS .csv demandé par davy : 
+  output$downloadtabletot <- downloadHandler(
+    filename = "matrice_indiv_espece_camera_Rich&RAI_EN.csv",
+    content = function(file) {
+      write.table(tabexpmap(), file,quote = TRUE, sep = ";",dec=".",row.names = FALSE, col.names = TRUE)
+    } 
+    
+  )
   
   #Sélection esp et site pour le graphe d'acti en 24h
   observe({
