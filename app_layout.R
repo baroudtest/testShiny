@@ -117,7 +117,7 @@ ui <- dashboardPage(
     tabItems(
       tabItem(tabName = "upload_donnees",
               fluidRow(
-                box(title = "Données de pièges photographiques",
+                box(title = "Données d'inventaire",
                     width = 4,
                     status = "warning",
                     solidHeader = T,
@@ -134,25 +134,28 @@ ui <- dashboardPage(
                     div(textOutput("erreur7"), style = "color:red"),
                     div(textOutput("erreur8"), style = "color:red"),
                     div(textOutput("erreur9"), style = "color:red"),
+                    h5("Chargez ci-dessus vos données d'inventaire selon le format précisé dans la note d'utilisateur, située à droite dans l'encadré rouge."),
                     fileInput(inputId = "status",
-                              label = "Statuts IUCN"),
-                    h5("Le fichier à uploader ci-dessus est téléchargeable dans l'onglet Analyse & reporting du site FauneFac, il est intitulé statuts.csv"),
-                    h5("(ou à uploader du serveur de la fac : soit fait par l'utilisateur, soit automatique)")
+                              label = "Statuts UICN"),
+                    h5("Chargez ci-dessus un fichier .csv reprenant le statut de conservation UICN(",url("https://www.iucnredlist.org/"),") des espèces détéctées lors de l'inventaire. Un exemplaire est disponible dans l'onglet 'Analyse & Reporting' du site Faunefac"),
+                    #h5("(ou à uploader du serveur de la fac : soit fait par l'utilisateur, soit automatique)")
                 ),#Fermeture box
                 
-                box(title = "Données spatiales",
+                box(title = "Localisation des pièges photographiques",
                     width = 4,
                     status = "warning",
                     solidHeader = T,
                     fileInput(inputId = "infocam",
-                              label = "Informations de localisation des caméras"),
+                              label = "Caractéristiques de l'inventaire"),
                     div(textOutput("fichier2"), style = "color:green"),
+                    h5("Chargez ici un fichier .csv selon le format précisé dans la note d'utilisateur, située à droite dans l'encadré rouge"),
                     br(),
                     br(),
                     fileInput(inputId = "shp",
-                              label = "Ajouter un polygone de délimitation de zones"),
+                              label = "Si vous souhaitez utiliser un fichier cartographique délimitant la zone d'étude, chargez-le ici"),
                     div(textOutput("fichier3"), style = "color:green"),
-                    numericInput("epsg","Sélectionnez l'EPSG souhaité pour la cartographie",32632)
+                    numericInput("epsg","Sélectionnez l'EPSG souhaité pour la cartographie",32632),
+                    h5("Si vous ne connaissez pas l'EPSG de la zone, vous pouvez le retrouver en suivant ce lien :", url("http://epsg.org/"))
                 ),#Fermeture box
                 
                 box(title = "Note d'utilisateur",
@@ -160,8 +163,8 @@ ui <- dashboardPage(
                     status = "danger",
                     solidHeader = T,
                     # Note utilisateur
-                    h4(div("Note importante concernant le format du jeu de données d'entrée :", style = "color:red")),
-                    p("1) Le jeu de donnée doit être au", strong("format de sortie .csv attribué par CameraBase, organisé comme suit"), "et doit comporter des colonnes ayant ces noms exacts, écrits dans cet ordre respectif :"),
+                    h4(div("Note importante concernant le format du jeu de données d'inventaire :", style = "color:red")),
+                    p("1) Le jeu de donnée doit être au", strong("format de sortie .csv attribué par CameraBase .csv avec ';' comme séparateur et '.' comme marque des décimales, organisé comme suit"), "et doit comporter des colonnes ayant ces noms exacts, écrits dans cet ordre respectif :"),
                     p(div(em("'Species'",
                              br(),
                              "'Camera'",
@@ -172,20 +175,27 @@ ui <- dashboardPage(
                              br(),
                              "'Date'",
                              br(),
-                             "'Hour'",
-                             br(),
-                             "'zone d'étude'",
-                             br(),
-                             "'Image1'"), style = "color:blue")
+                             "'Hour'"), style = "color:blue")
                     ),
+                    p("Notons que le logiciel CameraBase permet d'exporter les données d'inventaire directement au format décrit"),
                     p("2) Les individus identifiés doivent être renseignés dans le champ 'Species' par leur", strong("genre en majuscule"), "et leur", strong("espèce en minuscule"), "exemple :"),
                     div(em("'Loxodonta cyclotis'"),style = "color:blue"),
                     br(),
-                    p("- S'ils ne sont pas visibles, ils doivent être renseignés par :"),
+                    p("- Si l'identification n'est pas possible, indiquez dans le champ 'Species' : "),
+                    div(em("'indetermined'"), style = "color:blue"),
+                    br(),
+                    p("- Si aucun animal n'a été détecté (faux déclenchement), indiquez dans le champ 'Species' :"),
                     div(em("'no_sp'"), style = "color:blue"),
                     br(),
-                    p("- S'ils ne peuvent être identifiés, ils doivent être renseignés par :"),
-                    div(em("'indetermined'"), style = "color:blue")
+                    br(),
+                    h4(div("Note importante concernant le format des données caractéristiques d'inventaire :", style = "color:red")),
+                    p("1) Le jeu de donnée doit être au", strong("format de sortie .csv avec ';' comme séparateur et '.' comme marque des décimales, organisé comme suit"), "et comprenant des colonnes ayant ces noms exacts, écrits dans cet ordre respectif :"),
+                    p(div(em("'names' pour la colonne comprenant les identifiants des caméras",
+                             "'duration' pour la colonne comprenant le nombre de journées d'activité des caméras",
+                             "'utm_x' pour la colonne comprenant la latitude",
+                             "'utm_y' pour la colonne comprenant la longitude"),
+                             style = "color:blue")
+                    )
                     
                 )#Fermeture box
                 
@@ -230,7 +240,7 @@ ui <- dashboardPage(
                     solidHeader = T,
                     "La richesse spécifique peut également s’analyser en fonction de l’effort d’échantillonnage réalisé, ce qui permet d’analyser l’exhaustivité de l’inventaire.",
                     selectizeInput(inputId = "selectSite",
-                                   label = "Affichage des courbes",
+                                   label = "",
                                    choices = "",
                                    selected = "",
                                    multiple = TRUE),
@@ -270,42 +280,33 @@ ui <- dashboardPage(
                     downloadButton("downloadData", "Download")
                 ),#fermeture box
                 
-                box(title = "Figures",
+                box(title = "Rythmes d'activité",
+                    width = 6,
                     status = "warning",
                     solidHeader = T,
-                    tabBox(
-                      title = NULL,
-                      width = 12,
-                      tabPanel(title = "Graphique chelou à nommer",
-                               width = 12,
-                               status = "warning",
-                               solidHeader = T,
-                               selectizeInput(inputId = "selectSp_graph",
-                                              label = "Sélection de l'espèce",
-                                              choices = "",
-                                              selected = ""),
-                               selectizeInput(inputId = "selectLoc_graph",
-                                              label = "Sélection du site",
-                                              choices = "",
-                                              selected =""),
-                               actionButton("infoRythmeActiv","Info"),
-                               withSpinner(plotOutput("graph24h")),
-                               downloadButton("downloadGraph", "Télécharger le Graphique en .png"),
-                               downloadButton("downloadGraphSVG", "Télécharger le Graphique en .SVG")
-                      ),
+                    selectizeInput(inputId = "selectSp_graph",
+                                   label = "Sélection de l'espèce",
+                                   choices = "",
+                                   selected = ""),
+                    selectizeInput(inputId = "selectLoc_graph",
+                                   label = "Sélection du site",
+                                   choices = "",
+                                   selected =""),
+                    actionButton("infoRythmeActiv","Info"),
+                    withSpinner(plotOutput("graph24h")),
+                    downloadButton("downloadGraph", "Télécharger le Graphique en .png"),
+                    downloadButton("downloadGraphSVG", "Télécharger le Graphique en .SVG")
+                ),
                       
-                      tabPanel(title = "Carte d'abondance par espèce",
-                               width = 12,
-                               status = "warning",
-                               solidHeader = T,
-                               selectizeInput(inputId = "selectSp_carto",
-                                              label = "Sélection de l'espèce",
-                                              choices = ""),
-                               withSpinner(plotOutput("carte_abon_paresp")),
-                               downloadButton("downloadMap3", "Download Map")
-                      )
-                    )#Fermeture tabbox
-                    )#Fermeture box
+                      #tabPanel(title = "Carte d'abondance par espèce",
+                       #        width = 12,
+                        #       status = "warning",
+                         #      solidHeader = T,
+                          #     selectizeInput(inputId = "selectSp_carto",
+                           #                   label = "Sélection de l'espèce",
+                            #                  choices = ""),
+                             #  withSpinner(plotOutput("carte_abon_paresp")),
+                              # downloadButton("downloadMap3", "Download Map")
                 
               )#Fermeture fluidrow
               
@@ -313,22 +314,24 @@ ui <- dashboardPage(
       
       tabItem(tabName = "carto",
               fluidRow(
-                box(title = "Carte de richesse spécifique",
-                    width = 6,
-                    status = "warning",
-                    solidHeader = T,
-                    withSpinner(plotOutput("carte_richesse_spe")),
-                    downloadButton("downloadMap1", "Download Map")
-                ),
-                
-                box(title = "Carte des espèces menacées",
-                    width = 6,
-                    status = "warning",
-                    solidHeader = T,
-                    withSpinner(plotOutput("carte_espèces_men")),
-                    downloadButton("downloadMap2", "Download Map")
+                tabBox(width = 12,
+                       #status = "warning",
+                       tabPanel(title = "Carte de richesse spécifique",
+                                width = 12,
+                                status = "warning",
+                                solidHeader = T,
+                                withSpinner(plotOutput("carte_richesse_spe")),
+                                downloadButton("downloadMap1", "Download Map")
+                       ),
+                       
+                       tabPanel(title = "Carte des espèces menacées",
+                                width = 6,
+                                status = "warning",
+                                solidHeader = T,
+                                withSpinner(plotOutput("carte_espèces_men")),
+                                downloadButton("downloadMap2", "Download Map")
+                       )
                 )
-                
                 
               )#fermeture fluidrow
       )#fermeture tabitem carto
