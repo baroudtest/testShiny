@@ -150,7 +150,9 @@ ui <- dashboardPage(
                     #h5("(ou à uploader du serveur de la fac : soit fait par l'utilisateur, soit automatique)")
                 ),#Fermeture box
                 
-                box(width = 4,
+                box(width = 12,
+                    img(src = "Img_camtrap.png",
+                        height = 500)
                     )
                 
                 ),#fermeture colonne
