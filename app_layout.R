@@ -90,12 +90,10 @@ ui <- dashboardPage(
       )
     ),
     
-    br(),
-    br(),
-    br(),
     
     column(width = 12,
            offset = 0,
+           hr(),
            p(style = "text-align:justify;",
              "Cette application Shiny est dédiée à l’analyse de données issues d’inventaire par pièges photographiques."),
            br(),
@@ -103,11 +101,15 @@ ui <- dashboardPage(
              "Elle permet par une analyse automatisée de fournir quelques indicateurs qui caractérisent les inventaires de faune menés, 
              la communauté et les espèces animale détectées le tout sous forme de tableaux, 
              graphiques et cartes facilement téléchargeables."),
-           br(),
-           br(),
-           br(),
+           hr(),
            img(src = "gxabt_logo.png",
-               width = 270)
+               width = 270),
+           br(),
+           br(),
+           img(src = "COMIFAC.png",
+               width = 165),
+           img(src = "PPECF.jpg",
+               width = 100)
     )
   ), #Fermeture sidebar
   #-------------------------------
@@ -117,14 +119,17 @@ ui <- dashboardPage(
     tabItems(
       tabItem(tabName = "upload_donnees",
               fluidRow(
+                column(width = 4,
                 box(title = "Données d'inventaire",
-                    width = 4,
+                    width = 12,
                     status = "warning",
                     solidHeader = T,
                     fileInput(inputId = "file", 
                               label = "Table de données"),
                     div(textOutput("fichier1"), style = "color:green"),
-                    br(),
+                    h5("Chargez ci-dessus vos données d'inventaire selon le format précisé dans la note d'utilisateur, 
+                       située à droite dans l'encadré rouge.",
+                      style = "text-align:justify;"),
                     div(textOutput("erreur1"), style = "color:red"),
                     div(textOutput("erreur2"), style = "color:red"),
                     div(textOutput("erreur3"), style = "color:red"),
@@ -134,88 +139,110 @@ ui <- dashboardPage(
                     div(textOutput("erreur7"), style = "color:red"),
                     div(textOutput("erreur8"), style = "color:red"),
                     div(textOutput("erreur9"), style = "color:red"),
-                    h5("Chargez ci-dessus vos données d'inventaire selon le format précisé dans la note d'utilisateur, située à droite dans l'encadré rouge."),
+                    hr(),
                     fileInput(inputId = "status",
                               label = "Statuts UICN"),
-                    h5("Chargez ci-dessus un fichier .csv reprenant le statut de conservation UICN (",a(href = "https://www.iucnredlist.org/", "UICN"), 
-                       ") des espèces détéctées lors de l'inventaire. Un exemplaire est disponible dans l'onglet 'Analyse & Reporting' du site Faunefac")
+                    h5("Chargez ci-dessus un fichier .csv reprenant le statut de conservation ",
+                       a(href = "https://www.iucnredlist.org/", "UICN"), 
+                       " des espèces détéctées lors de l'inventaire. Un exemplaire est disponible dans l'onglet 'Analyse & Reporting' 
+                       du site Faunefac.",
+                      style = "text-align:justify;")
                     #h5("(ou à uploader du serveur de la fac : soit fait par l'utilisateur, soit automatique)")
                 ),#Fermeture box
                 
+                box(width = 4,
+                    )
+                
+                ),#fermeture colonne
+                
+                column(width = 8,
                 box(title = "Localisation des pièges photographiques",
-                    width = 4,
+                    width = 6,
                     status = "warning",
                     solidHeader = T,
                     fileInput(inputId = "infocam",
                               label = "Caractéristiques de l'inventaire"),
                     div(textOutput("fichier2"), style = "color:green"),
-                    h5("Chargez ici un fichier .csv selon le format précisé dans la note d'utilisateur, située à droite dans l'encadré rouge"),
-                    br(),
-                    br(),
-
-                    fileInput(inputId = "shp",
-                              label = "Si vous souhaitez utiliser un fichier cartographique délimitant la zone d'étude, chargez-le ici"),
-                    div(textOutput("fichier3"), style = "color:green"),
-                    numericInput("epsg","Sélectionnez l'EPSG souhaité pour la cartographie",32632),
-                    h5("Si vous ne connaissez pas l'EPSG de la zone, vous pouvez le retrouver en suivant ce lien :", a(href = "http://epsg.io/", "Détermination de l'EPSG")),
-
+                    h5("Chargez ici un fichier .csv selon le format précisé dans la note d'utilisateur, située à droite dans l'encadré rouge.",
+                       style = "text-align:justify;"),
                     div(textOutput("erreurCam1"), style = "color:red"),
                     div(textOutput("erreurCam2"), style = "color:red"),
                     div(textOutput("erreurCam3"), style = "color:red"),
                     div(textOutput("erreurCam4"), style = "color:red"),
                     div(textOutput("erreurCam5"), style = "color:red"),
-                    br(),
-                    br(),
-                    numericInput("epsg","Sélectionnez le code EPSG utilisé pour la cartographie",32632),
-                    h5("Le code EPSG sélectionné doit correspondre au code de la zone UTM de prise des points GPS, dans le datum WGS84. 
-                       Il est renseigné sur le site 'www.epsg.io' avec une recherche selon un terme composé du nom du datum, 
-                       séparé du nom de la zone UTM par une barre oblique, respectivement comme ceci : 'WGS 84 / UTM zone 32N'")
+                    hr(),
+
+                   # fileInput(inputId = "shp",
+                    #          label = "Si vous souhaitez utiliser un fichier cartographique délimitant la zone d'étude, chargez-le ici"),
+                    #div(textOutput("fichier3"), style = "color:green"),
+                    
+                   numericInput("epsg","EPSG souhaité pour la cartographie",32632),
+                   br(),
+                    h5("Si vous ne connaissez pas l'EPSG de la zone, vous pouvez le retrouver en suivant ce lien :", 
+                       a(href = "http://epsg.io/", "Détermination de l'EPSG"),
+                       ". Dans la barre de recherche, remplissez comme suit :", em(" WGS 84 / UTM zone 'Latitude de la zone' "), ". L'EPSG à sélectionner
+                       est celui correspondant au résultat exact de la recherche.", 
+                       br(), br(),
+                       "Par exemple, dans le cas d'une zone au Cameroun située à 32 degrés de latitude nord, la recherche sera :",
+                       em("WGS 84 / UTM zone 32N"), "et l'EPSG sortant sera le 32632.",
+                       style = "text-align:justify;")
                 ),
                 #Fermeture box
                 
                 box(title = "Note d'utilisateur",
-                    width = 4,
+                    width = 6,
                     status = "danger",
                     solidHeader = T,
                     # Note utilisateur
-                    h4(div("Note importante concernant le format du jeu de données d'inventaire :", style = "color:red")),
-                    p("1) Le jeu de donnée doit être au", strong("format de sortie .csv attribué par CameraBase .csv avec ';' comme séparateur et '.' comme marque des décimales, organisé comme suit"), "et doit comporter des colonnes ayant ces noms exacts, écrits dans cet ordre respectif :"),
-                    p(div(em("'Species'",
+                    h4(div("Note importante concernant le format des jeux de données", style = "color:red")),
+                    h5("Veillez à respecter le format indiqué pour les données afin d'assurer le bon fonctionnement de l'application.",
+                       style = "text-align:justify;"),
+                    hr(),
+                    h4("Table de données d'inventaire : "),
+                    h5('1) Le jeu de données doit être au format de sortie .csv avec ";" comme séparateur 
+                      et "." comme marque des décimales. Les colonnes doivent comporter ces noms exacts, et être ordonnées comme suit :',
+                      style = "text-align:justify;"),
+                    h5(div(em('"Species"',
                              br(),
-                             "'Camera'",
+                             '"Camera"',
                              br(),
-                             "'Site'",
+                             '"Site"',
                              br(),
-                             "'Individuals'",
+                             '"Individuals"',
                              br(),
-                             "'Date'",
+                             '"Date"',
                              br(),
-                             "'Hour'"), style = "color:blue")
+                             '"Hour"'), style = "color:blue")
                     ),
-                    p("Notons que le logiciel CameraBase permet d'exporter les données d'inventaire directement au format décrit"),
-                    p("2) Les individus identifiés doivent être renseignés dans le champ 'Species' par leur", strong("genre en majuscule"), "et leur", strong("espèce en minuscule"), "exemple :"),
-                    div(em("'Loxodonta cyclotis'"),style = "color:blue"),
+                    h5("Notons que le logiciel CameraBase permet d'exporter les données d'inventaire directement au format décrit.",
+                      style = "text-align:justify;"),
                     br(),
-                    p("- Si l'identification n'est pas possible, indiquez dans le champ 'Species' : "),
-                    div(em("'indetermined'"), style = "color:blue"),
-                    br(),
-                    p("- Si aucun animal n'a été détecté (faux déclenchement), indiquez dans le champ 'Species' :"),
-                    div(em("'no_sp'"), style = "color:blue"),
-                    br(),
-                    br(),
-                    h4(div("Note importante concernant le format des données caractéristiques d'inventaire :", style = "color:red")),
-                    p("1) Le jeu de donnée doit être au", strong("format de sortie .csv avec ';' comme séparateur et '.' comme marque des décimales, organisé comme suit"), "et comprenant des colonnes ayant ces noms exacts, écrits dans cet ordre respectif :"),
-                    p(div(em("'names' pour la colonne comprenant les identifiants des caméras",
+                    h5('2) Les individus identifiés doivent être renseignés dans le champ "Species" par leur genre en majuscule 
+                      et leur espèce en minuscule. Par exemple :',
+                      style = "text-align:justify;"),
+                    div(em('"Loxodonta cyclotis"'),style = "color:blue;"),
+                    h5("- Si l'identification n'est pas possible, indiquez : "),
+                    div(em('"indetermined"'), style = "color:blue"),
+                    h5("- Si aucun animal n'a été détecté (faux déclenchement), indiquez :"),
+                    div(em('"no_sp"'), style = "color:blue"),
+                    hr(),
+                    h4("Données caractéristiques de l'inventaire"),
+                    h5('Le jeu de données doit être au format de sortie .csv attribué par CameraBase avec ";" comme séparateur 
+                      et "." comme marque des décimales. Les colonnes doivent comporter ces noms exacts, et être ordonnées comme suit :',
+                      style = "text-align:justify;"),
+                    h5(div(em('"Camera" pour la colonne comprenant les identifiants des caméras ;',
                              br(),
-                             "'duration' pour la colonne comprenant le nombre de journées d'activité des caméras",
+                             '"Jours" pour la colonne comprenant le nombre de journées'," d'activité des caméras ;",
                              br(),
-                             "'utm_x' pour la colonne comprenant la latitude",
+                             '"utm_x" pour la colonne comprenant la latitude ;',
                              br(),
-                             "'utm_y' pour la colonne comprenant la longitude"),
+                             '"utm_y" pour la colonne comprenant la longitude.'),
                              style = "color:blue")
                     )
                     
                 )#Fermeture box
+                )#fermeture column
+                
                 
               )#fermeture fluidrow
       ),#Fermeture tabitem "charg_donn"
