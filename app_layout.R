@@ -137,7 +137,8 @@ ui <- dashboardPage(
                     h5("Chargez ci-dessus vos données d'inventaire selon le format précisé dans la note d'utilisateur, située à droite dans l'encadré rouge."),
                     fileInput(inputId = "status",
                               label = "Statuts UICN"),
-                    h5("Chargez ci-dessus un fichier .csv reprenant le statut de conservation UICN(",url("https://www.iucnredlist.org/"),") des espèces détéctées lors de l'inventaire. Un exemplaire est disponible dans l'onglet 'Analyse & Reporting' du site Faunefac"),
+                    h5("Chargez ci-dessus un fichier .csv reprenant le statut de conservation UICN (",a(href = "https://www.iucnredlist.org/", "UICN"), 
+                       ") des espèces détéctées lors de l'inventaire. Un exemplaire est disponible dans l'onglet 'Analyse & Reporting' du site Faunefac")
                     #h5("(ou à uploader du serveur de la fac : soit fait par l'utilisateur, soit automatique)")
                 ),#Fermeture box
                 
@@ -151,14 +152,13 @@ ui <- dashboardPage(
                     h5("Chargez ici un fichier .csv selon le format précisé dans la note d'utilisateur, située à droite dans l'encadré rouge"),
                     br(),
                     br(),
-<<<<<<< HEAD
+
                     fileInput(inputId = "shp",
                               label = "Si vous souhaitez utiliser un fichier cartographique délimitant la zone d'étude, chargez-le ici"),
                     div(textOutput("fichier3"), style = "color:green"),
                     numericInput("epsg","Sélectionnez l'EPSG souhaité pour la cartographie",32632),
-                    h5("Si vous ne connaissez pas l'EPSG de la zone, vous pouvez le retrouver en suivant ce lien :", url("http://epsg.org/"))
-                ),#Fermeture box
-=======
+                    h5("Si vous ne connaissez pas l'EPSG de la zone, vous pouvez le retrouver en suivant ce lien :", a(href = "http://epsg.io/", "Détermination de l'EPSG")),
+
                     div(textOutput("erreurCam1"), style = "color:red"),
                     div(textOutput("erreurCam2"), style = "color:red"),
                     div(textOutput("erreurCam3"), style = "color:red"),
@@ -167,10 +167,11 @@ ui <- dashboardPage(
                     br(),
                     br(),
                     numericInput("epsg","Sélectionnez le code EPSG utilisé pour la cartographie",32632),
-                    h5("Le code EPSG sélectionné doit correspondre au code de la zone UTM de prise des points GPS, dans le datum WGS84. Il est renseigné sur le site 'www.epsg.io' avec une recherche selon un terme composé du nom du datum, séparé du nom de la zone UTM par une barre oblique, respectivement comme ceci : 'WGS 84 / UTM zone 32N'")
+                    h5("Le code EPSG sélectionné doit correspondre au code de la zone UTM de prise des points GPS, dans le datum WGS84. 
+                       Il est renseigné sur le site 'www.epsg.io' avec une recherche selon un terme composé du nom du datum, 
+                       séparé du nom de la zone UTM par une barre oblique, respectivement comme ceci : 'WGS 84 / UTM zone 32N'")
                 ),
                 #Fermeture box
->>>>>>> 20cec72adcf8d01ad4e34078ad17322bd3323408
                 
                 box(title = "Note d'utilisateur",
                     width = 4,
@@ -205,8 +206,11 @@ ui <- dashboardPage(
                     h4(div("Note importante concernant le format des données caractéristiques d'inventaire :", style = "color:red")),
                     p("1) Le jeu de donnée doit être au", strong("format de sortie .csv avec ';' comme séparateur et '.' comme marque des décimales, organisé comme suit"), "et comprenant des colonnes ayant ces noms exacts, écrits dans cet ordre respectif :"),
                     p(div(em("'names' pour la colonne comprenant les identifiants des caméras",
+                             br(),
                              "'duration' pour la colonne comprenant le nombre de journées d'activité des caméras",
+                             br(),
                              "'utm_x' pour la colonne comprenant la latitude",
+                             br(),
                              "'utm_y' pour la colonne comprenant la longitude"),
                              style = "color:blue")
                     )
@@ -294,25 +298,33 @@ ui <- dashboardPage(
                     downloadButton("downloadData", "Download")
                 ),#fermeture box
                 
-                box(title = "Rythmes d'activité",
-                    width = 6,
-                    status = "warning",
-                    solidHeader = T,
-                    selectizeInput(inputId = "selectSp_graph",
-                                   label = "Sélection de l'espèce",
-                                   choices = "",
-                                   selected = ""),
-                    selectizeInput(inputId = "selectLoc_graph",
-                                   label = "Sélection du site",
-                                   choices = "",
-                                   selected =""),
-                    actionButton("infoRythmeActiv","Info"),
-                    withSpinner(plotOutput("graph24h")),
-                    downloadButton("downloadGraph", "Télécharger le Graphique en .png"),
-                    downloadButton("downloadGraphSVG", "Télécharger le Graphique en .SVG")
-                ),
-                      
-<<<<<<< HEAD
+                tabBox(width = 6,
+                       tabPanel(title = "Rythmes d'activité",
+                                width = 6,
+                                status = "warning",
+                                solidHeader = T,
+                                selectizeInput(inputId = "selectSp_graph",
+                                               label = "Sélection de l'espèce",
+                                               choices = "",
+                                               selected = ""),
+                                selectizeInput(inputId = "selectLoc_graph",
+                                               label = "Sélection du site",
+                                               choices = "",
+                                               selected =""),
+                                actionButton("infoRythmeActiv","Info"),
+                                withSpinner(plotOutput("graph24h")),
+                                downloadButton("downloadGraph", "Télécharger le Graphique en .png"),
+                                downloadButton("downloadGraphSVG", "Télécharger le Graphique en .SVG")
+                                ),
+                       
+                       tabPanel(title = "Diagramme en tarte",
+                                width = 12,
+                                status = "warning",
+                                solidHeader = T
+                       )
+
+   
+
                       #tabPanel(title = "Carte d'abondance par espèce",
                        #        width = 12,
                         #       status = "warning",
@@ -322,24 +334,15 @@ ui <- dashboardPage(
                             #                  choices = ""),
                              #  withSpinner(plotOutput("carte_abon_paresp")),
                               # downloadButton("downloadMap3", "Download Map")
-=======
-                      tabPanel(title = "Diagramme en tarte",
-                               width = 12,
-                               status = "warning",
-                               solidHeader = T
-                               
-                      )
+
                     )#Fermeture tabbox
-                    )#Fermeture box
->>>>>>> 20cec72adcf8d01ad4e34078ad17322bd3323408
-                
+
               )#Fermeture fluidrow
               
       ),#fermeture tabitem anal_esp
       
       tabItem(tabName = "carto",
               fluidRow(
-<<<<<<< HEAD
                 tabBox(width = 12,
                        #status = "warning",
                        tabPanel(title = "Carte de richesse spécifique",
@@ -356,39 +359,27 @@ ui <- dashboardPage(
                                 solidHeader = T,
                                 withSpinner(plotOutput("carte_espèces_men")),
                                 downloadButton("downloadMap2", "Download Map")
+                       ),
+                       
+                       tabPanel(title = "Téléchargement des données cartographiques",
+                                width = 12,
+                                status = "warning",
+                                solidHeader = T,
+                                h5("Pour de potentielles applications dans un GIS, le bouton ci-dessous permet le téléchargement, au format .csv, des données GPS de chaque caméra, 
+                                avec des métadonnées concernant le nombre d'individus pour chaque caméra et pour chaque espèce, la richesse spécifique par caméra, le nombre
+                                d'espèces menacées par caméra (colonne N_espece_EN), et le RAI des espèces menacées pour chaque caméra (colonne RAI_espece_EN)."),
+                                downloadButton("downloadtabletot", "Télécharger les données cartographiques en .csv")
                        )
-=======
-                box(title = "Carte de richesse spécifique",
-                    width = 6,
-                    status = "warning",
-                    solidHeader = T,
-                    withSpinner(plotOutput("carte_richesse_spe")),
-                    downloadButton("downloadMap1", "Download Map")
-                ),
+                )#Fermeture tabbox
                 
-                box(title = "Carte des espèces menacées",
-                    width = 6,
-                    status = "warning",
-                    solidHeader = T,
-                    withSpinner(plotOutput("carte_espèces_men")),
-                    downloadButton("downloadMap2", "Download Map")
-                ),
                 
-                box(title = "Téléchargement des données cartographiques",
-                    width = 12,
-                    status = "warning",
-                    solidHeader = T,
-                    h5("Pour de potentielles applications dans un GIS, le bouton ci-dessous permet le téléchargement, au format .csv, des données GPS de chaque caméra, avec des métadonnées concernant le nombre d'individus pour chaque caméra et pour chaque espèce, la richesse spécifique par caméra, le nombre d'espèces menacées par caméra (colonne N_espece_EN), et le RAI des espèces menacées pour chaque caméra (colonne RAI_espece_EN)."),
-                    downloadButton("downloadtabletot", "Télécharger les données cartographiques en .csv")
->>>>>>> 20cec72adcf8d01ad4e34078ad17322bd3323408
-                )
                 
               )#fermeture fluidrow
-      )#fermeture tabitem carto
-      
-    )#fermeture tabitems
-  )#fermeture dashboardbody
-) #Fermeture ui
+        )#fermeture tabitem carto
+      )#fermeture tabitems
+    )#fermeture dashboardbody
+  )#fermeture dashboardpage
+
 
 
 ## Partie Server ------------------------------------------------ 
