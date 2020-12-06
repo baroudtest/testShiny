@@ -226,7 +226,7 @@ ui <- dashboardPage(
                     width = 3,
                     status = "warning",
                     solidHeader = T,
-                    "Nombre d'hommes détectés sur la durée en jours de l'inventaire",
+                    "Nombre moyen d'hommes détectés sur une durée d'un mois (30 jours)",
                     tableOutput("homme")
                 ),
                 
