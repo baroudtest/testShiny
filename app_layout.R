@@ -1154,7 +1154,7 @@ server <- function(input, output, session) {
     infos_cam1$Camera=as.character(infos_cam1$Camera)
     Camdon$Camera=as.character(Camdon$Camera) # On transforme les valeurs des champs Camera en character afin de pouvoir effectuer la jointure
     
-    Camdon2 = left_join(Camdon,infos_cam1, by = c("Camera" = "Camera")) # C'est ainsi que l'on effectue la jointure,
+    Camdon2 = right_join(Camdon,infos_cam1, by = c("Camera" = "Camera")) # C'est ainsi que l'on effectue la jointure,
     # La fonction left_join permet de réaliser une jointure gauche, on va associer à chaque Camera de la variable Camdon les données des caméras d'infos_cam. Si un champ de la variable 
     # infos_cam ne contenait pas de valeur pour une ou certaines des camera de Camdon, 
     # on aurai des NO_DATA sur Camdon2 pour les lignes manquantes. De plus, s'il y avait des 
