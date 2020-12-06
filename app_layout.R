@@ -16,6 +16,8 @@ library(doBy)
 #install.packages("doby")
 library(sf)
 #install.packages("sf")
+library(dplyr)
+#install.packages("dplyr")
 library(ggspatial)
 #install.packages("ggspatial")
 library(grid)
@@ -145,6 +147,13 @@ ui <- dashboardPage(
                     fileInput(inputId = "infocam",
                               label = "Informations de localisation des caméras"),
                     div(textOutput("fichier2"), style = "color:green"),
+                    br(),
+                    br(),
+                    div(textOutput("erreurCam1"), style = "color:red"),
+                    div(textOutput("erreurCam2"), style = "color:red"),
+                    div(textOutput("erreurCam3"), style = "color:red"),
+                    div(textOutput("erreurCam4"), style = "color:red"),
+                    div(textOutput("erreurCam5"), style = "color:red"),
                     br(),
                     br(),
                     fileInput(inputId = "shp",
@@ -317,25 +326,15 @@ ui <- dashboardPage(
                     solidHeader = T,
                     withSpinner(plotOutput("carte_richesse_spe")),
                     downloadButton("downloadMap1", "Download Map")
-                ),  
+                ),
                 
                 box(title = "Carte des espèces menacées",
                     width = 6,
                     status = "warning",
                     solidHeader = T,
                     withSpinner(plotOutput("carte_espèces_men")),
-                    downloadButton("downloadMap2", "Download Map"), 
-                    downloadButton("downloadtotalcsv","Download data for Maps")
-                ), 
-                
-                box(title = "Téléchargement des données cartographiques",
-                    width = 12,
-                    status = "warning",
-                    solidHeader = T,
-                    p(style = "text-align:justify;",
-                      "Le bouton ci-dessous permet de télécharger le contenu cartographique, ainsi que d'autres informations de richesse par espèce et par caméra, au format .csv"),
-                    downloadButton("downloadtotalcsv","Download data for Maps")
-                ),
+                    downloadButton("downloadMap2", "Download Map")
+                )
                 
                 
               )#fermeture fluidrow
@@ -384,7 +383,7 @@ server <- function(input, output, session) {
     
     
     
-    names(infocamera) <- c("Camera","Notes","Serial","X","Y","Z","Jours","utm_x","utm_y")
+    
     infocamera
     
   })
@@ -593,6 +592,23 @@ server <- function(input, output, session) {
     ))
   })
   
+  observeEvent(ProblemeCam(), {
+    showModal(modalDialog(
+      title = "fichier d'info caméra non conforme",
+      paste("Le fichier chargé ne correspond pas au format requis. veuillez charger une table de données conforme pour obtenir vos résultats. ", sep=""),
+      br(),
+      br(),
+      paste(errcam()[1]),
+      br(),
+      paste(errcam()[2]),
+      br(),
+      paste(errcam()[3]),
+      br(),
+      paste(errcam()[4]),
+      
+      footer = modalButton("Fermer")
+    ))
+  })
   
   #Message d'information du tableau par communauté
   
@@ -1049,7 +1065,7 @@ server <- function(input, output, session) {
     # Ensuite, dans une colonne individuals, on calcule le nombre d'espèce par caméra ! 
     n_esp_cam <- aggregate(Individuals ~ Camera, data = n_indiv_cam_esp, length)
     # On renomme chaque fois les champs issus de double aggregate par length, par un nom qui correspond mieux aux données obtenues
-    n_esp_cam <- plyr::rename(n_esp_cam,"Nbesp"="Individuals")
+    n_esp_cam <- rename(n_esp_cam,"Nbesp"="Individuals" )
     
     # On cherche à inclure le statut IUCN 
     # On lie la table initiale à la table IUCN par l'espèce (ainsi on à le statut pour chaque espèce présente dans la liste)
@@ -1062,10 +1078,10 @@ server <- function(input, output, session) {
     EN <- aggregate(Individuals ~ Species + Camera, data = datEN, sum)
     # On aggrège le nombre d'entrées par caméra pour obtenir le nb d'esp en danger (CR ou EN) par caméra.
     ENCAM <- aggregate (Individuals ~ Camera, data = EN, length)
-    ENCAM <- plyr::rename(ENCAM,"NespEN"="Individuals") 
+    ENCAM <- rename(ENCAM,"NespEN"="Individuals" ) 
     # On aggrège aussi le nb d'individus en danger obvervés par caméra (effectif en danger)
     ENIND <- aggregate (Individuals ~ Camera, data= EN, sum)
-    ENIND <- plyr::rename(ENIND,"EffespEN"="Individuals")
+    ENIND <- rename(ENIND,"EffespEN"="Individuals")
     
     # On merge tout dans une table qui contient, pour chaque caméra, le nb d'espèce, 
     # le nb d'espèce en danger (CR ou EN) et le nb d'individus observés de ces espèces en danger : 
@@ -1135,7 +1151,7 @@ server <- function(input, output, session) {
     # On commence par calculer le nb d'individus observés par caméra, dans un nouveau df
     nind_cam <- aggregate(Individuals ~ Camera, data = dfinal, sum)
     # On renomme la colonne Effcam
-    nind_cam <- plyr::rename(nind_cam,"Tot_individuals_cam"="Individuals") 
+    nind_cam <- rename(nind_cam,"Tot_individuals_cam"="Individuals") 
     # On joint alors la colonne EffCam contenan le nb d'indiv/cam au d.f portant sur le nb d'individus d'une espèce sélectionnée
     nb_indiv_cam_selectesp <- merge(nb_indiv_selectesp,nind_cam,by="Camera",all.x=T)
     req(coordcam())
@@ -1413,72 +1429,6 @@ server <- function(input, output, session) {
     donneesdf3
   })
   
-# On aggrège les données par caméra pour chaque espèce, demandées par davy, sous forme de matrice, pour exportation .csv (richesse, nb d'espè men, RAI esp men, etc...) ----------------------------
-  donnees_demandees_davy <- reactive ({
-    req(data())
-    dfinal <- data()
-    dfinal$Camera <- as.character(dfinal$Camera)
-    dfinal$Species <- as.character(dfinal$Species)
-    
-    cam <- aggregate(Individuals ~ Camera, data=dfinal, sum)    
-    camvec <- factor(cam$Camera)
-    spec <- aggregate(Individuals ~ Species, data=dfinal, sum)
-    speciesvec <- factor(spec$Species)
-    nivcamvec <- as.numeric(nlevels(camvec))
-    nivspeciesvec <- as.numeric(nlevels(speciesvec))
-    
-    X = matrix(data=0, nrow=nivcamvec, ncol=nivspeciesvec)
-    colnames(X) <- as.character(levels(speciesvec))
-    rownames(X) <- as.character(levels(camvec))
-    
-    j=1
-    i=1
-    for (i in 1:nivspeciesvec) {
-      for (j in 1:nivcamvec) {
-        sub <- subset(dfinal, dfinal$Species==speciesvec[i] & dfinal$Camera==camvec[j])
-        if (is.null(sum(sub$Individuals))) { X[j,i]=0}
-        else {X[j,i]=sum(sub$Individuals)}
-      }
-    }
-    
-    Richvec <-c()
-    for (i in 1:nivcamvec) {
-      tri <- dplyr::select(dfinal,Camera,Species)
-      sub1 <- subset(tri, tri$Camera==camvec[i])
-      sub1 <- factor(sub1$Species)
-      Richvec[i] <- nlevels(sub1)
-    }
-    
-    req(IUCN())
-    IUCN <- IUCN()
-    datEN <- merge(dfinal,IUCN,by="Species",all.x=T)
-    # On ne garde dans un nouveau d.f que les individus qui ont un statut IUCN EN ou CR.
-    datEN <- subset(datEN,datEN$IUCN=="EN"|datEN$IUCN=="CR")
-    EN <- aggregate(Individuals ~ Species + Camera, data = datEN, sum)
-    # On aggrège le nombre d'entrées par caméra pour obtenir le nb d'esp en danger (CR ou EN) par caméra.
-    ENCAM <- aggregate (Individuals ~ Camera, data = EN, length)
-    ENCAM <- plyr::rename(ENCAM,"N_espece_EN" = "Individuals")
-    nbdetection <- aggregate(Individuals~Camera,data=datEN, length)
-    nbdetection <- plyr::rename(nbdetection,"NbdetEN"="Individuals")
-    donEN <- merge(nbdetection,ENCAM,by=c("Camera","Camera"),all=T)
-    req(coordcam())
-    infos_cam <- coordcam()
-    infos_cam1 = dplyr::select(infos_cam,utm_x:utm_y,Camera = name, duration)
-    donEN <- merge(donEN,infos_cam1, by=c("Camera","Camera"),all=T )
-    donEN[is.na(donEN)]<-0
-    donEN$RAI <- donEN$NbdetEN/donEN$duration*100
-    nomslignes <- as.character(donEN$Camera)
-    rownames(donEN) <- nomslignes
-    donENfin <- dplyr::select(donEN,N_espece_EN,RAI_espece_EN = RAI, utm_x, utm_y)
-    donENfin <- as.matrix(donENfin)
-    Ok1 <- cbind(X,Richvec)
-    docfin <- merge(Ok1,donENfin,by="row.names",all.x=TRUE)
-    docfin <- plyr::rename(docfin, "CT"="Row.names")
-    docfin <- plyr::rename(docfin, "Richesse"="Richvec")
-    
-    docfin
-  })
-  
   
   # Download du csv pour la richesse spé et les espèces EN et CR IUCN
   output$downloadCSV1 <- downloadHandler(
@@ -1496,13 +1446,6 @@ server <- function(input, output, session) {
       write.table(donnees_cartes_abun_df(), file,quote = TRUE, sep = ";",dec=".",row.names = FALSE, col.names = TRUE)
     } 
     
-  )
-  
-  output$downloadtotalcsv <- downloadHandler(
-    filename=paste("Richesse_RAI_UICN.csv"),
-    content = function(file) {
-      write.table(donnees_demandees_davy(), file, quote = TRUE, sep = ";",dec=".",row.names=FALSE,col.names=TRUE)
-    }
   )
   
   #Sélection esp et site pour le graphe d'acti en 24h
@@ -1782,7 +1725,130 @@ server <- function(input, output, session) {
     req(paste(noms()) != 'character(0)')
     1
   })
+
+
+
+
+###################
+# Erreur Caméra
+
+errcam <- reactive({
+  req(infoCam())
+  
+  df <- infoCam()
+  
+  CamOk <- 0
+  DurOk <- 0
+  UtXOk <- 0
+  utYOk <- 0
+
+  x <- c(1,2,3,4,5,6,7,8,9)
+  
+  x <- names(df)
+  
+
+  
+  if (x[1] == "Jours") {DurOk <- 1 }
+  else if (x[2] == "Jours") {DurOk <-1 }
+  else if (x[3] == "Jours") {DurOk <-1 }
+  else if (x[4] == "Jours") {DurOk <-1 }
+  else if (x[5] == "Jours") {DurOk <-1 }
+  else if (x[6] == "Jours") {DurOk <-1 }
+  else if (x[7] == "Jours") {DurOk <-1 }
+  else if (x[8] == "Jours") {DurOk <-1 }
+  else if (x[9] == "Jous") {DurOk <-1 }
+  
+  if (DurOk == 1) {DurOkk <- ""}
+  else { DurOkk <- "Erreur, impossible de trouver la colonne 'Jours'. vérifiez la syntaxe du jeu de donnée"}
+  
+  if (x[1] == "Camera") {CamOk <- 1 }
+  else if (x[2] == "Camera") {CamOk <-1 }
+  else if (x[3] == "Camera") {CamOk <-1 }
+  else if (x[4] == "Camera") {CamOk <-1 }
+  else if (x[5] == "Camera") {CamOk <-1 }
+  else if (x[6] == "Camera") {CamOk <-1 }
+  else if (x[7] == "Camera") {CamOk <-1 }
+  else if (x[8] == "Camera") {CamOk <-1 }
+  else if (x[9] == "Camera") {CamOk <-1 }
+
+  if (CamOk == 1) {CamOkk <- ""}
+  else { CamOkk <- "Erreur, impossible de trouver la colonne 'Camera'. vérifiez la syntaxe du jeu de donnée"}
+  
+  if (x[1] == "utm_x") {UtXOk <- 1 }
+  else if (x[2] == "utm_x") {UtXOk <-1 }
+  else if (x[3] == "utm_x") {UtXOk <-1 }
+  else if (x[4] == "utm_x") {UtXOk <-1 }
+  else if (x[5] == "utm_x") {UtXOk <-1 }
+  else if (x[6] == "utm_x") {UtXOk <-1 }
+  else if (x[7] == "utm_x") {UtXOk <-1 }
+  else if (x[8] == "utm_x") {UtXOk <-1 }
+  else if (x[9] == "utm_x") {UtXOk <-1 }
+  
+  if (UtXOk == 1) {UtXOkk <- ""}
+  else { UtXOkk <- "Erreur, impossible de trouver la colonne 'utm_x'. vérifiez la syntaxe du jeu de donnée"}
+  
+  if (x[1] == "utm_y") {UtYOk <- 1 }
+  else if (x[2] == "utm_y") {UtYOk <-1 }
+  else if (x[3] == "utm_y") {UtYOk <-1 }
+  else if (x[4] == "utm_y") {UtYOk <-1 }
+  else if (x[5] == "utm_y") {UtYOk <-1 }
+  else if (x[6] == "utm_y") {UtYOk <-1 }
+  else if (x[7] == "utm_y") {UtYOk <-1 }
+  else if (x[8] == "utm_y") {UtYOk <-1 }
+  else if (x[9] == "utm_y") {UtYOk <-1 }
+  
+  if (UtYOk == 1) {UtYOkk <- ""}
+  else { UtYOkk <- "Erreur, impossible de trouver la colonne 'utm_y'. vérifiez la syntaxe du jeu de donnée"}
+  
+  
+  
+  AllOk <- (CamOk + DurOk + UtXOk +UtYOk )
+  
+  
+  if (AllOk == 4) {AlOk <- ""}
+  else {AlOk <- "Le fichier chargé ne correspond pas au format requis. veuillez charger une table de données conforme pour obtenir vos résultats. "}
+  
+  camerr <- c(CamOkk,DurOkk,UtXOkk,UtYOkk,AllOk,AlOk)
+  camerr
+  
+})
+
+# encodage des texte en output
+
+output$erreurCam1 <- renderText({
+  req(input$infocam)
+  errcam()[1]
+})
+
+
+output$erreurCam2 <- renderText({
+  req(input$infocam)
+  errcam()[2]
+})
+
+output$erreurCam3 <- renderText({
+  req(input$infocam)
+  errcam()[3]
+})
+
+output$erreurCam4 <- renderText({
+  req(input$infocam)
+  errcam()[4]
+})
+output$erreurCam5 <- renderText({
+  req(input$infocam)
+  errcam()[6]
+})
+
+ProblemeCam <- reactive({
+  req(errcam())
+  req(errcam()[5] != 4)
+  
+  1
+})
+
 }
+
 
 ## Run the app ---------------------------------------------------
 shinyApp(ui = ui, server = server)
