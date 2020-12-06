@@ -149,6 +149,13 @@ ui <- dashboardPage(
                     div(textOutput("fichier2"), style = "color:green"),
                     br(),
                     br(),
+                    div(textOutput("erreurCam1"), style = "color:red"),
+                    div(textOutput("erreurCam2"), style = "color:red"),
+                    div(textOutput("erreurCam3"), style = "color:red"),
+                    div(textOutput("erreurCam4"), style = "color:red"),
+                    div(textOutput("erreurCam5"), style = "color:red"),
+                    br(),
+                    br(),
                     fileInput(inputId = "shp",
                               label = "Ajouter un polygone de délimitation de zones"),
                     div(textOutput("fichier3"), style = "color:green"),
@@ -376,7 +383,7 @@ server <- function(input, output, session) {
     
     
     
-    names(infocamera) <- c("Camera","Notes","Serial","X","Y","Z","Jours","utm_x","utm_y")
+    
     infocamera
     
   })
@@ -585,6 +592,23 @@ server <- function(input, output, session) {
     ))
   })
   
+  observeEvent(ProblemeCam(), {
+    showModal(modalDialog(
+      title = "fichier d'info caméra non conforme",
+      paste("Le fichier chargé ne correspond pas au format requis. veuillez charger une table de données conforme pour obtenir vos résultats. ", sep=""),
+      br(),
+      br(),
+      paste(errcam()[1]),
+      br(),
+      paste(errcam()[2]),
+      br(),
+      paste(errcam()[3]),
+      br(),
+      paste(errcam()[4]),
+      
+      footer = modalButton("Fermer")
+    ))
+  })
   
   #Message d'information du tableau par communauté
   
@@ -1701,7 +1725,130 @@ server <- function(input, output, session) {
     req(paste(noms()) != 'character(0)')
     1
   })
+
+
+
+
+###################
+# Erreur Caméra
+
+errcam <- reactive({
+  req(infoCam())
+  
+  df <- infoCam()
+  
+  CamOk <- 0
+  DurOk <- 0
+  UtXOk <- 0
+  utYOk <- 0
+
+  x <- c(1,2,3,4,5,6,7,8,9)
+  
+  x <- names(df)
+  
+
+  
+  if (x[1] == "Jours") {DurOk <- 1 }
+  else if (x[2] == "Jours") {DurOk <-1 }
+  else if (x[3] == "Jours") {DurOk <-1 }
+  else if (x[4] == "Jours") {DurOk <-1 }
+  else if (x[5] == "Jours") {DurOk <-1 }
+  else if (x[6] == "Jours") {DurOk <-1 }
+  else if (x[7] == "Jours") {DurOk <-1 }
+  else if (x[8] == "Jours") {DurOk <-1 }
+  else if (x[9] == "Jous") {DurOk <-1 }
+  
+  if (DurOk == 1) {DurOkk <- ""}
+  else { DurOkk <- "Erreur, impossible de trouver la colonne 'Jours'. vérifiez la syntaxe du jeu de donnée"}
+  
+  if (x[1] == "Camera") {CamOk <- 1 }
+  else if (x[2] == "Camera") {CamOk <-1 }
+  else if (x[3] == "Camera") {CamOk <-1 }
+  else if (x[4] == "Camera") {CamOk <-1 }
+  else if (x[5] == "Camera") {CamOk <-1 }
+  else if (x[6] == "Camera") {CamOk <-1 }
+  else if (x[7] == "Camera") {CamOk <-1 }
+  else if (x[8] == "Camera") {CamOk <-1 }
+  else if (x[9] == "Camera") {CamOk <-1 }
+
+  if (CamOk == 1) {CamOkk <- ""}
+  else { CamOkk <- "Erreur, impossible de trouver la colonne 'Camera'. vérifiez la syntaxe du jeu de donnée"}
+  
+  if (x[1] == "utm_x") {UtXOk <- 1 }
+  else if (x[2] == "utm_x") {UtXOk <-1 }
+  else if (x[3] == "utm_x") {UtXOk <-1 }
+  else if (x[4] == "utm_x") {UtXOk <-1 }
+  else if (x[5] == "utm_x") {UtXOk <-1 }
+  else if (x[6] == "utm_x") {UtXOk <-1 }
+  else if (x[7] == "utm_x") {UtXOk <-1 }
+  else if (x[8] == "utm_x") {UtXOk <-1 }
+  else if (x[9] == "utm_x") {UtXOk <-1 }
+  
+  if (UtXOk == 1) {UtXOkk <- ""}
+  else { UtXOkk <- "Erreur, impossible de trouver la colonne 'utm_x'. vérifiez la syntaxe du jeu de donnée"}
+  
+  if (x[1] == "utm_y") {UtYOk <- 1 }
+  else if (x[2] == "utm_y") {UtYOk <-1 }
+  else if (x[3] == "utm_y") {UtYOk <-1 }
+  else if (x[4] == "utm_y") {UtYOk <-1 }
+  else if (x[5] == "utm_y") {UtYOk <-1 }
+  else if (x[6] == "utm_y") {UtYOk <-1 }
+  else if (x[7] == "utm_y") {UtYOk <-1 }
+  else if (x[8] == "utm_y") {UtYOk <-1 }
+  else if (x[9] == "utm_y") {UtYOk <-1 }
+  
+  if (UtYOk == 1) {UtYOkk <- ""}
+  else { UtYOkk <- "Erreur, impossible de trouver la colonne 'utm_y'. vérifiez la syntaxe du jeu de donnée"}
+  
+  
+  
+  AllOk <- (CamOk + DurOk + UtXOk +UtYOk )
+  
+  
+  if (AllOk == 4) {AlOk <- ""}
+  else {AlOk <- "Le fichier chargé ne correspond pas au format requis. veuillez charger une table de données conforme pour obtenir vos résultats. "}
+  
+  camerr <- c(CamOkk,DurOkk,UtXOkk,UtYOkk,AllOk,AlOk)
+  camerr
+  
+})
+
+# encodage des texte en output
+
+output$erreurCam1 <- renderText({
+  req(input$infocam)
+  errcam()[1]
+})
+
+
+output$erreurCam2 <- renderText({
+  req(input$infocam)
+  errcam()[2]
+})
+
+output$erreurCam3 <- renderText({
+  req(input$infocam)
+  errcam()[3]
+})
+
+output$erreurCam4 <- renderText({
+  req(input$infocam)
+  errcam()[4]
+})
+output$erreurCam5 <- renderText({
+  req(input$infocam)
+  errcam()[6]
+})
+
+ProblemeCam <- reactive({
+  req(errcam())
+  req(errcam()[5] != 4)
+  
+  1
+})
+
 }
+
 
 ## Run the app ---------------------------------------------------
 shinyApp(ui = ui, server = server)
