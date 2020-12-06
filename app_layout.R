@@ -156,11 +156,10 @@ ui <- dashboardPage(
                     div(textOutput("erreurCam5"), style = "color:red"),
                     br(),
                     br(),
-                    fileInput(inputId = "shp",
-                              label = "Ajouter un polygone de délimitation de zones"),
-                    div(textOutput("fichier3"), style = "color:green"),
-                    numericInput("epsg","Sélectionnez l'EPSG souhaité pour la cartographie",32632)
-                ),#Fermeture box
+                    numericInput("epsg","Sélectionnez l'EPSG souhaité pour la cartographie",32632),
+                    h5("Le code EPSG sélectionné correspond au code EPSG de la zone UTM de prise des points GPS, dans le datum WGS84. Il est renseigné sur le site 'www.epsg.io' avec une recherche selon un terme composé du nom du datum, séparé du nom de la zone UTM par une barre oblique, respectivement comme ceci : 'WGS 84 / UTM zone 32N'")
+                ),
+                #Fermeture box
                 
                 box(title = "Note d'utilisateur",
                     width = 4,
@@ -940,13 +939,6 @@ server <- function(input, output, session) {
     
   })
   
-  # message de chargement optionnelle du shapefile
-  output$ichier3 <- renderText({
-    req(input$shp)
-    texte3 <- "Shapefile chargé"
-    texte3
-    
-  })
   
   observe({
     updateSelectizeInput(
