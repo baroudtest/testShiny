@@ -48,6 +48,8 @@ library(data.table)
 #install.packages("data.table")
 library(shinydashboard)
 #install.packages("shinydashboard")
+library(tidyr)
+#install.packages("tidyr")
 
 #-------------------------------
 #-------------------------------
@@ -550,8 +552,8 @@ server <- function(input, output, session) {
     dfinal
     
   })
+
   
-  ####################################################################################
   ## message d'erreur ==> verification des noms d'especes
   
   noms <- reactive({
@@ -594,7 +596,7 @@ server <- function(input, output, session) {
       footer = modalButton("Fermer")
     ))
   })
-  ####################################################################################
+
   
   
   #Test Message d'erreur de fichier non conforme
@@ -793,20 +795,35 @@ server <- function(input, output, session) {
   ##PLUSIEURS SITES PAR GRAPHIQUE
   accumul <- function (){
     if(input$selectSite == "Tous sites confondus"){
-      matriceTot <- aggregate(Individuals ~ Date+Species,data=data(),sum)
+      matriceTot <- aggregate(Individuals ~ Date+Camera+Species,data=data(),sum)
       matriceTot$Date <- dmy(matriceTot$Date)
-      matriceTot <- matriceTot[order(matriceTot$Date),]
-      matriceTot <- dcast(matriceTot,Date~Species,fill=0)
+      # !!! Ajouter les jours manquants pour chaque camera !!!
+      matriceTot <- matriceTot %>%
+        group_by(Camera) %>% 
+        complete(Date = seq.Date(min(Date),max(Date), by = "day"))
+      matriceTot[which(is.na(matriceTot$Individuals)),"Individuals"] <- 0
+      ###
+      matriceTot$Date <- paste(matriceTot$Date,matriceTot$Camera,sep="_")
+      matriceTot <- matriceTot[order(matriceTot$Date),][,-1]
+      matriceTot <- reshape2::dcast(matriceTot,Date~Species,fill=0)
       rownames(matriceTot) <- matriceTot[,1]
       matriceTot <- matriceTot[,-1]
       
       accumTot <- specaccum(matriceTot)
-      plot(accumTot,xlab = "Nb de jours d'inventaire cumulés",ylab = "Nombre d'espèces",ci=0)
-      title(main="Courbe d'accumulation") }
-    else {
-      matriceSite <- aggregate(Individuals ~ Date+Site+Species,data=data(),sum)
+      plot(accumTot,xlab = "Nombre de jours d'inventaire cumulés",ylab = "Nombre d'espèces",ci=0)
+      title(main="Courbe d'accumulation") 
+    } else {
+      matriceSite <- aggregate(Individuals ~ Date+Camera+Site+Species,data=data(),sum)
       matriceSite$Date <- dmy(matriceSite$Date)
-      matriceSite <- matriceSite[order(matriceSite$Date),]
+      # !!! Ajouter les jours manquants pour chaque camera !!!
+      matriceSite <- matriceSite %>%
+        group_by(Camera) %>% 
+        complete(Date = seq.Date(min(Date),max(Date), by = "day")) %>% 
+        fill(Site)
+      matriceSite[which(is.na(matriceSite$Individuals)),"Individuals"] <- 0
+      ###
+      matriceSite$Date <- paste(matriceSite$Date,matriceSite$Camera,sep="_")
+      matriceSite <- matriceSite[order(matriceSite$Date),][,-1]
       
       sites <- aggregate(Individuals ~ Site, data = data(), sum)
       sites <- sites$Site
@@ -815,9 +832,9 @@ server <- function(input, output, session) {
       matrices_sep <- list()
       accumSite <- list()
       for (i in 1:nSites) {
-        matrices_sep[[i]] <- subset(matriceSite, substr(matriceSite$Site,1,3)==substr(sites[i],1,3))
+        matrices_sep[[i]] <- subset(matriceSite, matriceSite$Site==sites[i])
         matrices_sep[[i]] <- matrices_sep[[i]][,-2]
-        matrices_sep[[i]] <- dcast(matrices_sep[[i]],Date~Species,fill=0)
+        matrices_sep[[i]] <- reshape2::dcast(matrices_sep[[i]],Date~Species,fill=0)
         rownames(matrices_sep[[i]]) <- matrices_sep[[i]][,1]
         matrices_sep[[i]] <- matrices_sep[[i]][,-1]
         accumSite[[i]] <- specaccum(matrices_sep[[i]])
@@ -827,8 +844,13 @@ server <- function(input, output, session) {
       rich <- aggregate(Individuals ~ Site, data = rich, length)
       m <- which(rich$Individuals==max(rich$Individuals))
       
-      plot(accumSite[[m]],xlab = "Nb de jours d'inventaire cumulés",ylab = "Nombre d'espèces",
-           ci=0,col=2,key.pos=4) #ajouter legende : couleurs selon les sites
+      camJ <- data.frame()
+      for (i in 1:nSites) {
+        camJ[i,c(1,2)] <- c(sites[i],nrow(matrices_sep[[i]]))
+      }
+      camJ$V2 <- as.numeric(camJ$V2)
+      plot(accumSite[[m]],xlab = "Nombre de jours d'inventaire cumulés",ylab = "Nombre d'espèces",
+           ci=0,col=2,xlim = c(0,max(camJ$V2))) #ajouter legende : couleurs selon les sites
       title("Courbes d'accumulation")
       legend(x="bottomright",legend=c(sites),col=2:(nSites+1),lty=1:1,lwd=1:1,cex=0.8)
       for (i in 1:nSites) {
