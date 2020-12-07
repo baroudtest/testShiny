@@ -62,7 +62,7 @@ ui <- dashboardPage(
   #Titre
   #-------------------------------
   dashboardHeader(
-    title = "Application",
+    title = "Application FauneFAC",
     titleWidth = 300,
     disable = F
   ),
