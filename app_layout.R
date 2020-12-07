@@ -107,9 +107,9 @@ ui <- dashboardPage(
            br(),
            br(),
            img(src = "COMIFAC.png",
-               width = 165),
+               height = 140),
            img(src = "PPECF.jpg",
-               width = 100)
+               height = 140)
     )
   ), #Fermeture sidebar
   #-------------------------------
@@ -191,12 +191,12 @@ ui <- dashboardPage(
                 ),
                 #Fermeture box
                 
-                box(title = "Note d'utilisateur",
+                box(title = "Note d'utilisateur concernant le format des jeux de données",
                     width = 6,
                     status = "danger",
                     solidHeader = T,
                     # Note utilisateur
-                    h4(div("Note importante concernant le format des jeux de données", style = "color:red")),
+                    #h4(div("Note importante concernant le format des jeux de données", style = "color:red")),
                     h5("Veillez à respecter le format indiqué pour les données afin d'assurer le bon fonctionnement de l'application.",
                        style = "text-align:justify;"),
                     hr(),
@@ -257,9 +257,12 @@ ui <- dashboardPage(
                     width = 6,
                     status = "warning",
                     solidHeader = T,
-                    "Vous trouverez ci-dessous un tableau récapitulatif de la communauté détectée durant votre/vos inventaire(s).",
+                    "Vous trouverez ci-dessous un tableau récapitulatif des communautés détectées durant votre inventaire.",
+                    br(),
                     br(),
                     actionButton("info","Info"),
+                    br(),
+                    br(),
                     div(style ='overflow-x:scroll',
                         withSpinner(tableOutput("richesse"))),
                     downloadButton("downloadCom", "Download")
@@ -285,7 +288,8 @@ ui <- dashboardPage(
                     width = 6,
                     status = "warning",
                     solidHeader = T,
-                    "La richesse spécifique peut également s’analyser en fonction de l’effort d’échantillonnage réalisé, ce qui permet d’analyser l’exhaustivité de l’inventaire.",
+                    "La richesse spécifique peut également s’analyser en fonction de l’effort d’échantillonnage réalisé, ce qui permet 
+                    d’obtenir une indication de l’exhaustivité de l’inventaire.",
                     selectizeInput(inputId = "selectSite",
                                    label = "",
                                    choices = "",
@@ -308,8 +312,6 @@ ui <- dashboardPage(
                     #height = 900,
                     status = "warning",
                     solidHeader = T,
-                    p(style = "text-align:justify;",
-                      "De multiples indices peuvent être générés à partir des données obtenues par pièges photographiques. Nous avons décidé de vous présenter seulement le taux de détection standardisé par l’effort d’inventaire, communément décrit sous le terme de RAI en anglais (Relative Abundance index) . D’autres analyses sont possibles et des ressources sont mobilisables dans la partie « Pour en savoir plus »"),
                     p(style = "text-align:justify;",
                       "Il est possible de sélectionner une, plusieurs ou toutes les espèces. Il en est de même concernant les sites."),
                     selectizeInput(inputId = "selectSp_tab",
@@ -608,19 +610,21 @@ server <- function(input, output, session) {
       paste(noms()),
       br(),
       br(),
-      paste("Cela est dû au format incorrect du nom de l'espèce dans votre jeu de données. 
+      h5("Cela est dû au format incorrect du nom de l'espèce dans votre jeu de données. 
       Veuillez vous référer aux noms scientifiques présents sur le site de l'IUCN, remplacez-les dans 
-      votre jeu de données et rechargez vos fichiers."),
+      votre jeu de données et rechargez vos fichiers.",
+         style = "text-align:justify;"),
       br(),
       br(),
-      paste("Si le problème persiste après avoir modifié les noms, 
-      cela signifie que l'espèce n'est pas présente dans notre base de données. "),
+      h5("Si le problème persiste après avoir modifié les noms, cela signifie que l'espèce n'est pas présente dans notre base de données. ",
+            style = "text-align:justify;"),
       br(),
       br(),
-      paste("Vous pouvez alors l'ajouter vous même dans le fichier statuts.csv et relancer l'application. 
+      h5("Vous pouvez alors l'ajouter vous même dans le fichier statuts.csv et relancer l'application.
       Les analyses fournies restent valables, mais les espèces restantes dans cette liste ne pourront pas 
-      être prises en compte dans le recensement et la répartition des espèces menacées.", sep=""),
-      footer = modalButton("Fermer")
+      être prises en compte dans le recensement et la répartition des espèces menacées.",
+            style = "text-align:justify;"),
+      footer = modalButton("Masquer")
     ))
   })
   ####################################################################################
@@ -647,7 +651,7 @@ server <- function(input, output, session) {
       br(),
       paste(err()[7]),
       br(),
-      footer = modalButton("Fermer")
+      footer = modalButton("Masquer")
     ))
   })
   
@@ -665,7 +669,7 @@ server <- function(input, output, session) {
       br(),
       paste(errcam()[4]),
       
-      footer = modalButton("Fermer")
+      footer = modalButton("Masquer")
     ))
   })
   
@@ -673,32 +677,28 @@ server <- function(input, output, session) {
   
  observeEvent(input$info, {
     showModal(modalDialog(
-      title = "Information du tableau récapitulatif de la communauté",
-      paste("Ce tableau reprend des informations générales sur votre campagne d'inventaire.", sep =""),
-      br(),
-      br(),
-      paste("Celles-ci sont reprises pour chaque site étudié", sep =""),
-      br(),
-      br(),
-      paste("Les informations regroupées dans les différentes colonnes du tableau sont les suivantes : ", sep =""),
-      br(),
-      br(),
-      paste("Le Site tel que repris dans la table de donnée chargée", sep =""),
-      br(),
-      br(),
-      paste("Le nombre de caméras déployées pour le site concerné", sep =""),
-      br(),
-      br(),
-      paste("L'effort d'inventaire repris en caméra-jours. Cette information est obtenue en additionnant le nombre de jours de déployement respectif de chaque caméra installée sur le site concerné", sep =""),
-      br(),
-      br(),
-      paste("La richesse spécifique ou richesse en espèce. Il s'agit du nombre d'espèces différentes identifiées pour le site concerné", sep = ""),
-      br(),
-      br(),
-      paste("Le nombre d'espèces menacées. La determination des espèces menacées se fait en se basant sur le fichier des statuts fournis sur le site FauneFAC. Celui-ci se basant initialement sur la liste rouge de L'UICN.  ", sep = ""),
-      br(),
-      paste("Les espèces reprises dans ce calcul sont celles considérées comme 'EN' (en danger) ou 'CR' (en danger critique)", sep = ""),
-      footer = modalButton("Fermer")
+      title = "Description détaillée du tableau récapitulatif des communautés",
+      h5("Ce tableau présente des informations générales sur votre campagne d'inventaire. Celles-ci 
+         sont reprises pour chacun des sites étudiés.",
+         style = "text-align:justify;"),
+      hr(),
+      h5("Les informations regroupées dans les différentes colonnes du tableau sont les suivantes : ",
+         style = "text-align:justify;"),
+      h5("- Le site tel que repris dans la table de donnée chargée ; ",
+         style = "text-align:justify;"),
+      h5("- Le nombre de caméras déployées pour le site concerné ; ",
+         style = "text-align:justify;"),
+      h5("- L'effort d'inventaire repris en caméra-jours. Cette information est obtenue en additionnant le nombre de jours de 
+         déploiement respectif de chaque caméra installée sur le site concerné ;",
+         style = "text-align:justify;"),
+      h5("- La richesse spécifique ou richesse en espèce. Il s'agit du nombre d'espèces différentes identifiées pour le site
+         concerné ;",
+         style = "text-align:justify;"),
+      h5("- Le nombre d'espèces menacées. La determination des espèces menacées se fait d'après le fichier des statuts 
+         fournis sur le site FauneFAC, initialement basé sur la liste rouge de L'UICN. Les espèces reprises dans ce calcul sont celles 
+         considérées comme 'EN' (en danger) ou 'CR' (en danger critique).  ",
+         style = "text-align:justify;"),
+      footer = modalButton("Masquer")
       
     ))
     
@@ -707,37 +707,43 @@ server <- function(input, output, session) {
  
  observeEvent(input$infoTableEsp, {
    showModal(modalDialog(
-     title = "Information du tableau récapitulatif par espèces",
-     paste("Ce tableau reprend par colonne des informations concernant chaque espèce prise individuelement. Les informations reprises sont les suivantes :", sep= ""),
-     br(),
-     br(),
-     paste("Le nom des ou de l'espèce(s) tel que demandé dans la boite 'Sélection de l'espèce'", sep= ""),
-     br(),
-     br(),
-     paste("Le Site pour lequel les observations et calculs sont faits. Ces sites sont sélectionnés dans la boite 'Sélection du site'", sep= ""),
-     br(),
-     paste("Si plusieurs site sont sélectionnés, certaines espèces partagée entre eux se retrouveront plusieurs fois dans ce tableau avec les données obtenues pour chacun des sites respectifs", sep= ""),
-     br(),
-     br(),
-     paste("Le nombre de détections. Ce chiffre reprends, pour le site concerné le nombre d'évènement indépendant pour lequel l'espèce apparait."),
-     br(),
-     paste("Par exemple un groupe de potamochères aperçut sur plusieurs vidéos proche l'une de l'autre dans le temps correspondra à une détection", sep= ""),
-     br(),
-     br(),
-     paste("Le taux de détection ou RAI. Ce taux est calculé en reprenant le nombre de détection précédement définis pour le site concerné divisé par le nombre de caméra jours pour ce même site."),
-     br(),
-     paste("Le nombre de caméra jours est précédement définis dans le tableau 'Communauté' et correspond à la somme du temps de déployement en jour de chaque piège photographique placé sur le site.", sep= ""),
-     br(),
-     br(),
-     paste("Le nombre moyen d'individus par détection. Cette donnée est obtenue en reprenant chaque détection indépendante de l'espèce définie pour le site défini et en effectuant la moyenne du nombre d'individus détectés.", sep= ""),
-     br(),
-     br(),
-     paste("Le Statut UICN tel que repris dans le fichier téléchargeable sur le site internet FauneFAC", sep= ""),
-     br(),
-     paste("Si votre escpèce ne se retrouve pas dans la liste fournie, le statut suivant sera indiqué 'NA'. ", sep= ""),
-     br(),
-     paste("Si l'espèce est contenue dans le fichier mais qu'elle n'est pas reprise dans la liste de l'UICN, le statut suivant sera indiqué 'NA*'", sep= ""),
-     footer = modalButton("Fermer")
+     title = "Description détaillée du tableau récapitulatif par espèces",
+     h5("De nombreux indices et informations peuvent être obtenus à partir des données de pièges photographiques. 
+           Ce tableau reprend individuellement une série d'informations, pour chaque espèce sélectionnée. La liste présentée ici
+           est loin d'être exhaustive et se contente des valeurs les plus communément utilisées. D'autres ressources et analyses 
+           sont mobilisables dans l'onglet",'"Pour en savoir plus" du site FauneFAC.',
+           style = "tet-align:justify;"),
+     hr(),
+     h5("Les informations reprises sont les suivantes, dans l'ordre des colonnes :",
+        style = "text-align:justify;"),
+     h5("- Le nom de l'",'espèce tel que demandé dans la boîte', "Sélection de l'espèce ;",
+        style = "text-align:justify;"),
+     h5("- Le site pour lequel les calculs et observations sont effectués. Ces sites sont sélectionnés dans la boite", '"Sélection du site" ;', 
+           "Si plusieurs sites sont sélectionnés, les espèces sélectionnées apparaissent autant de fois qu'il y a de sites, avec à chaque
+           les différentes informations reprises pour leur site respectif. Dans le cas où l'option",' "Tous les sites" est sélectionnée, les 
+           informations sont combinées. Cette dernière option'," n'est pas compatible avec la sélection d'autres sites ;",
+           style = "text-align:justify;"),
+
+     h5("- Le nombre de détections. Cette valeur reprend pour le site concerné le nombre de fois où l'espèce sélectionnée apparaît, 
+           indépendamment du nombre d'individus présents sur la photo. Par exemple, un groupe de quatre potamochères capturés sur une même 
+           image sera comptabilisé comme une seule détection ;",
+           style = "text-align:justify;"),
+
+     h5("- Le taux de détection ou RAI. Il est calculé en reprenant le nombre de détections précédement défini pour le site 
+           concerné divisé par le nombre de caméras/jours pour ce même site. Le nombre de caméras/jours correspond pour chacun des pièges 
+           photographiques placés sur le site à la somme de son temps de déploiement en jours ;",
+           style = "text-align:justify;"),
+
+     h5("- Le nombre moyen d'individus par détection. Cette donnée est obtenue en reprenant chaque détection indépendante de l'espèce 
+           sélectionnée et en effectuant la moyenne du nombre d'individus détectés ;",
+           style = "text-align:justify;"),
+
+     h5("- Le Statut UICN tel que repris dans le fichier téléchargeable sur le site FauneFAC. Si votre escpèce ne se retrouve pas dans 
+           la liste fournie, le statut suivant sera indiqué :",' "NA".', "Si l'espèce est contenue dans le fichier mais qu'elle n'est pas 
+           reprise dans la liste de l'UICN, le statut suivant sera indiqué :",'"NA*".',
+           style = "text-align:justify;"),
+
+     footer = modalButton("Masquer")
      
    ))
    
@@ -746,10 +752,12 @@ server <- function(input, output, session) {
  
  observeEvent(input$infoRythmeActiv, {
    showModal(modalDialog(
-     title = "Information Rythme d'activité",
-     paste("Le Graphique du rythme d'activité reprends par heure la somme des individus observés pour le site et l'espèce concernée ", sep =""),
-     br(),
-     paste("Ce graphique permet de renseigner les heures d'activité prédominante chez l'espèce observée dans le site demandé", sep =""),
+     title = "Description détaillée du diagramme du rythme d'activité",
+     h5("Le diagramme du rythme d'activité reprend de manière horaire la somme du nombre d'individus observés pour le site et l'espèce 
+        sélectionnés. Il permet de donner une indication de la période d'activité prédominante.",
+        style = "text-align:justify"),
+     h5("Il est possible d'obtenir cette analyse pour une ou plusieurs espèces, et pour un seul ou l'ensemble des sites.", 
+           style = "text-align:justify;"),
      footer = modalButton("Fermer")
      
    ))
