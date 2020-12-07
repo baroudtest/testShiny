@@ -50,6 +50,8 @@ library(shinydashboard)
 #install.packages("shinydashboard")
 library(tidyr)
 #install.packages("tidyr")
+library(MoLE)
+#install.packages("MoLE")
 
 #-------------------------------
 #-------------------------------
@@ -353,7 +355,19 @@ ui <- dashboardPage(
                        tabPanel(title = "Diagramme en tarte",
                                 width = 12,
                                 status = "warning",
-                                solidHeader = T
+                                solidHeader = T,
+                                selectizeInput(inputId = "selectNbEsp",
+                                               label = "Nombre d'espèces à afficher",
+                                               choices = "",
+                                               selected =""),
+                                selectizeInput(inputId = "selectSitePie",
+                                               label = "Sélection du site",
+                                               choices = "",
+                                               selected = ""),
+                                actionButton("infoPie","Info"),
+                                withSpinner(plotOutput("abrelPie")),
+                                downloadButton("downloadPie", "Télécharger le Graphique en .png"),
+                                downloadButton("downloadPieSVG", "Télécharger le Graphique en .SVG")
                        )
 
    
@@ -753,6 +767,23 @@ server <- function(input, output, session) {
         style = "text-align:justify"),
      h5("Il est possible d'obtenir cette analyse pour une ou plusieurs espèces, et pour un seul ou l'ensemble des sites.", 
            style = "text-align:justify;"),
+     footer = modalButton("Fermer")
+     
+   ))
+   
+ })
+ 
+ observeEvent(input$infoPie, {
+   showModal(modalDialog(
+     title = "Description détaillée du diagramme d'abondance relative",
+     h5("Le diagramme d'abondance relative reprend la part relative du nombre d'individus observés
+        selon les espèces. Afin de faciliter la lecture du graphique, seules les espèces les plus
+        représentées sont affichées, les autres étant sommées dans la catégorie",'"Autres".',
+        style = "text-align:justify"),
+     h5("Il est possible de changer le nombre d'espèces que vous souhaitez voir s'afficher pour que
+        le graphique s'adapte au mieux à votre jeu de données. Vous pouvez également choisir le site
+        pour lequel vous désirez afficher le diagramme.", 
+        style = "text-align:justify;"),
      footer = modalButton("Fermer")
      
    ))
