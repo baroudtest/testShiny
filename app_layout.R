@@ -92,12 +92,10 @@ ui <- dashboardPage(
       )
     ),
     
-    br(),
-    br(),
-    br(),
     
     column(width = 12,
            offset = 0,
+           hr(),
            p(style = "text-align:justify;",
              "Cette application Shiny est dédiée à l’analyse de données issues d’inventaire par pièges photographiques."),
            br(),
@@ -105,11 +103,15 @@ ui <- dashboardPage(
              "Elle permet par une analyse automatisée de fournir quelques indicateurs qui caractérisent les inventaires de faune menés, 
              la communauté et les espèces animale détectées le tout sous forme de tableaux, 
              graphiques et cartes facilement téléchargeables."),
-           br(),
-           br(),
-           br(),
+           hr(),
            img(src = "gxabt_logo.png",
-               width = 270)
+               width = 270),
+           br(),
+           br(),
+           img(src = "COMIFAC.png",
+               height = 140),
+           img(src = "PPECF.jpg",
+               height = 140)
     )
   ), #Fermeture sidebar
   #-------------------------------
@@ -119,14 +121,17 @@ ui <- dashboardPage(
     tabItems(
       tabItem(tabName = "upload_donnees",
               fluidRow(
+                column(width = 4,
                 box(title = "Données d'inventaire",
-                    width = 4,
+                    width = 12,
                     status = "warning",
                     solidHeader = T,
                     fileInput(inputId = "file", 
                               label = "Table de données"),
                     div(textOutput("fichier1"), style = "color:green"),
-                    br(),
+                    h5("Chargez ci-dessus vos données d'inventaire selon le format précisé dans la note d'utilisateur, 
+                       située à droite dans l'encadré rouge.",
+                      style = "text-align:justify;"),
                     div(textOutput("erreur1"), style = "color:red"),
                     div(textOutput("erreur2"), style = "color:red"),
                     div(textOutput("erreur3"), style = "color:red"),
@@ -136,88 +141,112 @@ ui <- dashboardPage(
                     div(textOutput("erreur7"), style = "color:red"),
                     div(textOutput("erreur8"), style = "color:red"),
                     div(textOutput("erreur9"), style = "color:red"),
-                    h5("Chargez ci-dessus vos données d'inventaire selon le format précisé dans la note d'utilisateur, située à droite dans l'encadré rouge."),
+                    hr(),
                     fileInput(inputId = "status",
                               label = "Statuts UICN"),
-                    h5("Chargez ci-dessus un fichier .csv reprenant le statut de conservation UICN (",a(href = "https://www.iucnredlist.org/", "UICN"), 
-                       ") des espèces détéctées lors de l'inventaire. Un exemplaire est disponible dans l'onglet 'Analyse & Reporting' du site Faunefac")
+                    h5("Chargez ci-dessus un fichier .csv reprenant le statut de conservation ",
+                       a(href = "https://www.iucnredlist.org/", "UICN"), 
+                       " des espèces détéctées lors de l'inventaire. Un exemplaire est disponible dans l'onglet 'Analyse & Reporting' 
+                       du site Faunefac.",
+                      style = "text-align:justify;")
                     #h5("(ou à uploader du serveur de la fac : soit fait par l'utilisateur, soit automatique)")
                 ),#Fermeture box
                 
+                box(width = 12,
+                    img(src = "Img_camtrap.png",
+                        height = 500)
+                    )
+                
+                ),#fermeture colonne
+                
+                column(width = 8,
                 box(title = "Localisation des pièges photographiques",
-                    width = 4,
+                    width = 6,
                     status = "warning",
                     solidHeader = T,
                     fileInput(inputId = "infocam",
                               label = "Caractéristiques de l'inventaire"),
                     div(textOutput("fichier2"), style = "color:green"),
-                    h5("Chargez ici un fichier .csv selon le format précisé dans la note d'utilisateur, située à droite dans l'encadré rouge"),
-                    br(),
-                    br(),
-
-                    fileInput(inputId = "shp",
-                              label = "Si vous souhaitez utiliser un fichier cartographique délimitant la zone d'étude, chargez-le ici"),
-                    div(textOutput("fichier3"), style = "color:green"),
-                    numericInput("epsg","Sélectionnez l'EPSG souhaité pour la cartographie",32632),
-                    h5("Si vous ne connaissez pas l'EPSG de la zone, vous pouvez le retrouver en suivant ce lien :", a(href = "http://epsg.io/", "Détermination de l'EPSG")),
-
+                    h5("Chargez ici un fichier .csv selon le format précisé dans la note d'utilisateur, située à droite dans l'encadré rouge.",
+                       style = "text-align:justify;"),
                     div(textOutput("erreurCam1"), style = "color:red"),
                     div(textOutput("erreurCam2"), style = "color:red"),
                     div(textOutput("erreurCam3"), style = "color:red"),
                     div(textOutput("erreurCam4"), style = "color:red"),
                     div(textOutput("erreurCam5"), style = "color:red"),
-                    br(),
-                    br(),
-                    numericInput("epsg","Sélectionnez le code EPSG utilisé pour la cartographie",32632),
-                    h5("Le code EPSG sélectionné doit correspondre au code de la zone UTM de prise des points GPS, dans le datum WGS84. 
-                       Il est renseigné sur le site 'www.epsg.io' avec une recherche selon un terme composé du nom du datum, 
-                       séparé du nom de la zone UTM par une barre oblique, respectivement comme ceci : 'WGS 84 / UTM zone 32N'")
+                    hr(),
+
+                   # fileInput(inputId = "shp",
+                    #          label = "Si vous souhaitez utiliser un fichier cartographique délimitant la zone d'étude, chargez-le ici"),
+                    #div(textOutput("fichier3"), style = "color:green"),
+                    
+                   numericInput("epsg","EPSG souhaité pour la cartographie",32632),
+                   br(),
+                    h5("Si vous ne connaissez pas l'EPSG de la zone, vous pouvez le retrouver en suivant ce lien :", 
+                       a(href = "http://epsg.io/", "Détermination de l'EPSG"),
+                       ". Dans la barre de recherche, remplissez comme suit :", em(" WGS 84 / UTM zone 'Latitude de la zone' "), ". L'EPSG à sélectionner
+                       est celui correspondant au résultat exact de la recherche.", 
+                       br(), br(),
+                       "Par exemple, dans le cas d'une zone au Cameroun située à 32 degrés de latitude nord, la recherche sera :",
+                       em("WGS 84 / UTM zone 32N"), "et l'EPSG sortant sera le 32632.",
+                       style = "text-align:justify;")
                 ),
                 #Fermeture box
                 
-                box(title = "Note d'utilisateur",
-                    width = 4,
+                box(title = "Note d'utilisateur concernant le format des jeux de données",
+                    width = 6,
                     status = "danger",
                     solidHeader = T,
                     # Note utilisateur
-                    h4(div("Note importante concernant le format du jeu de données d'inventaire :", style = "color:red")),
-                    p("1) Le jeu de donnée doit être au", strong("format de sortie .csv attribué par CameraBase .csv avec ';' comme séparateur et '.' comme marque des décimales, organisé comme suit"), "et doit comporter des colonnes ayant ces noms exacts, écrits dans cet ordre respectif :"),
-                    p(div(em("'Species'",
+                    #h4(div("Note importante concernant le format des jeux de données", style = "color:red")),
+                    h5("Veillez à respecter le format indiqué pour les données afin d'assurer le bon fonctionnement de l'application.",
+                       style = "text-align:justify;"),
+                    hr(),
+                    h4("Table de données d'inventaire : "),
+                    h5('1) Le jeu de données doit être au format de sortie .csv avec ";" comme séparateur 
+                      et "." comme marque des décimales. Les colonnes doivent comporter ces noms exacts, et être ordonnées comme suit :',
+                      style = "text-align:justify;"),
+                    h5(div(em('"Species"',
                              br(),
-                             "'Camera'",
+                             '"Camera"',
                              br(),
-                             "'Site'",
+                             '"Site"',
                              br(),
-                             "'Individuals'",
+                             '"Individuals"',
                              br(),
-                             "'Date'",
+                             '"Date"',
                              br(),
-                             "'Hour'"), style = "color:blue")
+                             '"Hour"'), style = "color:blue")
                     ),
-                    p("Notons que le logiciel CameraBase permet d'exporter les données d'inventaire directement au format décrit"),
-                    p("2) Les individus identifiés doivent être renseignés dans le champ 'Species' par leur", strong("genre en majuscule"), "et leur", strong("espèce en minuscule"), "exemple :"),
-                    div(em("'Loxodonta cyclotis'"),style = "color:blue"),
+                    h5("Notons que le logiciel CameraBase permet d'exporter les données d'inventaire directement au format décrit.",
+                      style = "text-align:justify;"),
                     br(),
-                    p("- Si l'identification n'est pas possible, indiquez dans le champ 'Species' : "),
-                    div(em("'indetermined'"), style = "color:blue"),
-                    br(),
-                    p("- Si aucun animal n'a été détecté (faux déclenchement), indiquez dans le champ 'Species' :"),
-                    div(em("'no_sp'"), style = "color:blue"),
-                    br(),
-                    br(),
-                    h4(div("Note importante concernant le format des données caractéristiques d'inventaire :", style = "color:red")),
-                    p("1) Le jeu de donnée doit être au", strong("format de sortie .csv avec ';' comme séparateur et '.' comme marque des décimales, organisé comme suit"), "et comprenant des colonnes ayant ces noms exacts, écrits dans cet ordre respectif :"),
-                    p(div(em("'names' pour la colonne comprenant les identifiants des caméras",
+                    h5('2) Les individus identifiés doivent être renseignés dans le champ "Species" par leur genre en majuscule 
+                      et leur espèce en minuscule. Par exemple :',
+                      style = "text-align:justify;"),
+                    div(em('"Loxodonta cyclotis"'),style = "color:blue;"),
+                    h5("- Si l'identification n'est pas possible, indiquez : "),
+                    div(em('"indetermined"'), style = "color:blue"),
+                    h5("- Si aucun animal n'a été détecté (faux déclenchement), indiquez :"),
+                    div(em('"no_sp"'), style = "color:blue"),
+                    hr(),
+                    h4("Données caractéristiques de l'inventaire"),
+                    h5('Le jeu de données doit être au format de sortie .csv attribué par CameraBase avec ";" comme séparateur 
+                      et "." comme marque des décimales. Les colonnes doivent comporter ces noms exacts, et être ordonnées comme suit :',
+                      style = "text-align:justify;"),
+                    h5(div(em('"Camera" pour la colonne comprenant les identifiants des caméras ;',
                              br(),
-                             "'duration' pour la colonne comprenant le nombre de journées d'activité des caméras",
+                             '"Jours" pour la colonne comprenant le nombre de journées'," d'activité des caméras ;",
                              br(),
-                             "'utm_x' pour la colonne comprenant la latitude",
+                             '"utm_x" pour la colonne comprenant la latitude ;',
                              br(),
-                             "'utm_y' pour la colonne comprenant la longitude"),
+                             '"utm_y" pour la colonne comprenant la longitude.'),
                              style = "color:blue")
                     )
                     
                 )#Fermeture box
+                )#fermeture column
+                
                 
               )#fermeture fluidrow
       ),#Fermeture tabitem "charg_donn"
@@ -230,9 +259,12 @@ ui <- dashboardPage(
                     width = 6,
                     status = "warning",
                     solidHeader = T,
-                    "Vous trouverez ci-dessous un tableau récapitulatif de la communauté détectée durant votre/vos inventaire(s).",
+                    "Vous trouverez ci-dessous un tableau récapitulatif des communautés détectées durant votre inventaire.",
+                    br(),
                     br(),
                     actionButton("info","Info"),
+                    br(),
+                    br(),
                     div(style ='overflow-x:scroll',
                         withSpinner(tableOutput("richesse"))),
                     downloadButton("downloadCom", "Download")
@@ -258,7 +290,8 @@ ui <- dashboardPage(
                     width = 6,
                     status = "warning",
                     solidHeader = T,
-                    "La richesse spécifique peut également s’analyser en fonction de l’effort d’échantillonnage réalisé, ce qui permet d’analyser l’exhaustivité de l’inventaire.",
+                    "La richesse spécifique peut également s’analyser en fonction de l’effort d’échantillonnage réalisé, ce qui permet 
+                    d’obtenir une indication de l’exhaustivité de l’inventaire.",
                     selectizeInput(inputId = "selectSite",
                                    label = "",
                                    choices = "",
@@ -281,8 +314,6 @@ ui <- dashboardPage(
                     #height = 900,
                     status = "warning",
                     solidHeader = T,
-                    p(style = "text-align:justify;",
-                      "De multiples indices peuvent être générés à partir des données obtenues par pièges photographiques. Nous avons décidé de vous présenter seulement le taux de détection standardisé par l’effort d’inventaire, communément décrit sous le terme de RAI en anglais (Relative Abundance index) . D’autres analyses sont possibles et des ressources sont mobilisables dans la partie « Pour en savoir plus »"),
                     p(style = "text-align:justify;",
                       "Il est possible de sélectionner une, plusieurs ou toutes les espèces. Il en est de même concernant les sites."),
                     selectizeInput(inputId = "selectSp_tab",
@@ -576,24 +607,19 @@ server <- function(input, output, session) {
     showModal(modalDialog(
       title = "Vérification des noms d'espèces",
       paste("L'application ne reconnait pas les espèces suivantes :", sep =""),
-      br(),
-      br(),
       paste(noms()),
       br(),
-      br(),
-      paste("Cela est dû au format incorrect du nom de l'espèce dans votre jeu de données. 
+      h5("Cela est dû au format incorrect du nom de l'espèce dans votre jeu de données. 
       Veuillez vous référer aux noms scientifiques présents sur le site de l'IUCN, remplacez-les dans 
-      votre jeu de données et rechargez vos fichiers."),
-      br(),
-      br(),
-      paste("Si le problème persiste après avoir modifié les noms, 
-      cela signifie que l'espèce n'est pas présente dans notre base de données. "),
-      br(),
-      br(),
-      paste("Vous pouvez alors l'ajouter vous même dans le fichier statuts.csv et relancer l'application. 
+      votre jeu de données et rechargez vos fichiers.",
+         style = "text-align:justify;"),
+      h5("Si le problème persiste après avoir modifié les noms, cela signifie que l'espèce n'est pas présente dans notre base de données. ",
+            style = "text-align:justify;"),
+      h5("Vous pouvez alors l'ajouter vous même dans le fichier statuts.csv et relancer l'application.
       Les analyses fournies restent valables, mais les espèces restantes dans cette liste ne pourront pas 
-      être prises en compte dans le recensement et la répartition des espèces menacées.", sep=""),
-      footer = modalButton("Fermer")
+      être prises en compte dans le recensement et la répartition des espèces menacées.",
+            style = "text-align:justify;"),
+      footer = modalButton("Masquer")
     ))
   })
 
@@ -620,7 +646,7 @@ server <- function(input, output, session) {
       br(),
       paste(err()[7]),
       br(),
-      footer = modalButton("Fermer")
+      footer = modalButton("Masquer")
     ))
   })
   
@@ -638,7 +664,7 @@ server <- function(input, output, session) {
       br(),
       paste(errcam()[4]),
       
-      footer = modalButton("Fermer")
+      footer = modalButton("Masquer")
     ))
   })
   
@@ -646,32 +672,28 @@ server <- function(input, output, session) {
   
  observeEvent(input$info, {
     showModal(modalDialog(
-      title = "Information du tableau récapitulatif de la communauté",
-      paste("Ce tableau reprend des informations générales sur votre campagne d'inventaire.", sep =""),
-      br(),
-      br(),
-      paste("Celles-ci sont reprises pour chaque site étudié", sep =""),
-      br(),
-      br(),
-      paste("Les informations regroupées dans les différentes colonnes du tableau sont les suivantes : ", sep =""),
-      br(),
-      br(),
-      paste("Le Site tel que repris dans la table de donnée chargée", sep =""),
-      br(),
-      br(),
-      paste("Le nombre de caméras déployées pour le site concerné", sep =""),
-      br(),
-      br(),
-      paste("L'effort d'inventaire repris en caméra-jours. Cette information est obtenue en additionnant le nombre de jours de déployement respectif de chaque caméra installée sur le site concerné", sep =""),
-      br(),
-      br(),
-      paste("La richesse spécifique ou richesse en espèce. Il s'agit du nombre d'espèces différentes identifiées pour le site concerné", sep = ""),
-      br(),
-      br(),
-      paste("Le nombre d'espèces menacées. La determination des espèces menacées se fait en se basant sur le fichier des statuts fournis sur le site FauneFAC. Celui-ci se basant initialement sur la liste rouge de L'UICN.  ", sep = ""),
-      br(),
-      paste("Les espèces reprises dans ce calcul sont celles considérées comme 'EN' (en danger) ou 'CR' (en danger critique)", sep = ""),
-      footer = modalButton("Fermer")
+      title = "Description détaillée du tableau récapitulatif des communautés",
+      h5("Ce tableau présente des informations générales sur votre campagne d'inventaire. Celles-ci 
+         sont reprises pour chacun des sites étudiés.",
+         style = "text-align:justify;"),
+      hr(),
+      h5("Les informations regroupées dans les différentes colonnes du tableau sont les suivantes : ",
+         style = "text-align:justify;"),
+      h5("- Le site tel que repris dans la table de donnée chargée ; ",
+         style = "text-align:justify;"),
+      h5("- Le nombre de caméras déployées pour le site concerné ; ",
+         style = "text-align:justify;"),
+      h5("- L'effort d'inventaire repris en caméra-jours. Cette information est obtenue en additionnant le nombre de jours de 
+         déploiement respectif de chaque caméra installée sur le site concerné ;",
+         style = "text-align:justify;"),
+      h5("- La richesse spécifique ou richesse en espèce. Il s'agit du nombre d'espèces différentes identifiées pour le site
+         concerné ;",
+         style = "text-align:justify;"),
+      h5("- Le nombre d'espèces menacées. La determination des espèces menacées se fait d'après le fichier des statuts 
+         fournis sur le site FauneFAC, initialement basé sur la liste rouge de L'UICN. Les espèces reprises dans ce calcul sont celles 
+         considérées comme 'EN' (en danger) ou 'CR' (en danger critique).  ",
+         style = "text-align:justify;"),
+      footer = modalButton("Masquer")
       
     ))
     
@@ -680,37 +702,43 @@ server <- function(input, output, session) {
  
  observeEvent(input$infoTableEsp, {
    showModal(modalDialog(
-     title = "Information du tableau récapitulatif par espèces",
-     paste("Ce tableau reprend par colonne des informations concernant chaque espèce prise individuelement. Les informations reprises sont les suivantes :", sep= ""),
-     br(),
-     br(),
-     paste("Le nom des ou de l'espèce(s) tel que demandé dans la boite 'Sélection de l'espèce'", sep= ""),
-     br(),
-     br(),
-     paste("Le Site pour lequel les observations et calculs sont faits. Ces sites sont sélectionnés dans la boite 'Sélection du site'", sep= ""),
-     br(),
-     paste("Si plusieurs site sont sélectionnés, certaines espèces partagée entre eux se retrouveront plusieurs fois dans ce tableau avec les données obtenues pour chacun des sites respectifs", sep= ""),
-     br(),
-     br(),
-     paste("Le nombre de détections. Ce chiffre reprends, pour le site concerné le nombre d'évènement indépendant pour lequel l'espèce apparait."),
-     br(),
-     paste("Par exemple un groupe de potamochères aperçut sur plusieurs vidéos proche l'une de l'autre dans le temps correspondra à une détection", sep= ""),
-     br(),
-     br(),
-     paste("Le taux de détection ou RAI. Ce taux est calculé en reprenant le nombre de détection précédement définis pour le site concerné divisé par le nombre de caméra jours pour ce même site."),
-     br(),
-     paste("Le nombre de caméra jours est précédement définis dans le tableau 'Communauté' et correspond à la somme du temps de déployement en jour de chaque piège photographique placé sur le site.", sep= ""),
-     br(),
-     br(),
-     paste("Le nombre moyen d'individus par détection. Cette donnée est obtenue en reprenant chaque détection indépendante de l'espèce définie pour le site défini et en effectuant la moyenne du nombre d'individus détectés.", sep= ""),
-     br(),
-     br(),
-     paste("Le Statut UICN tel que repris dans le fichier téléchargeable sur le site internet FauneFAC", sep= ""),
-     br(),
-     paste("Si votre escpèce ne se retrouve pas dans la liste fournie, le statut suivant sera indiqué 'NA'. ", sep= ""),
-     br(),
-     paste("Si l'espèce est contenue dans le fichier mais qu'elle n'est pas reprise dans la liste de l'UICN, le statut suivant sera indiqué 'NA*'", sep= ""),
-     footer = modalButton("Fermer")
+     title = "Description détaillée du tableau récapitulatif par espèces",
+     h5("De nombreux indices et informations peuvent être obtenus à partir des données de pièges photographiques. 
+           Ce tableau reprend individuellement une série d'informations, pour chaque espèce sélectionnée. La liste présentée ici
+           est loin d'être exhaustive et se contente des valeurs les plus communément utilisées. D'autres ressources et analyses 
+           sont mobilisables dans l'onglet",'"Pour en savoir plus" du site FauneFAC.',
+           style = "tet-align:justify;"),
+     hr(),
+     h5("Les informations reprises sont les suivantes, dans l'ordre des colonnes :",
+        style = "text-align:justify;"),
+     h5("- Le nom de l'",'espèce tel que demandé dans la boîte', "Sélection de l'espèce ;",
+        style = "text-align:justify;"),
+     h5("- Le site pour lequel les calculs et observations sont effectués. Ces sites sont sélectionnés dans la boite", '"Sélection du site" ;', 
+           "Si plusieurs sites sont sélectionnés, les espèces sélectionnées apparaissent autant de fois qu'il y a de sites, avec à chaque
+           les différentes informations reprises pour leur site respectif. Dans le cas où l'option",' "Tous les sites" est sélectionnée, les 
+           informations sont combinées. Cette dernière option'," n'est pas compatible avec la sélection d'autres sites ;",
+           style = "text-align:justify;"),
+
+     h5("- Le nombre de détections. Cette valeur reprend pour le site concerné le nombre de fois où l'espèce sélectionnée apparaît, 
+           indépendamment du nombre d'individus présents sur la photo. Par exemple, un groupe de quatre potamochères capturés sur une même 
+           image sera comptabilisé comme une seule détection ;",
+           style = "text-align:justify;"),
+
+     h5("- Le taux de détection ou RAI. Il est calculé en reprenant le nombre de détections précédement défini pour le site 
+           concerné divisé par le nombre de caméras/jours pour ce même site. Le nombre de caméras/jours correspond pour chacun des pièges 
+           photographiques placés sur le site à la somme de son temps de déploiement en jours ;",
+           style = "text-align:justify;"),
+
+     h5("- Le nombre moyen d'individus par détection. Cette donnée est obtenue en reprenant chaque détection indépendante de l'espèce 
+           sélectionnée et en effectuant la moyenne du nombre d'individus détectés ;",
+           style = "text-align:justify;"),
+
+     h5("- Le Statut UICN tel que repris dans le fichier téléchargeable sur le site FauneFAC. Si votre escpèce ne se retrouve pas dans 
+           la liste fournie, le statut suivant sera indiqué :",' "NA".', "Si l'espèce est contenue dans le fichier mais qu'elle n'est pas 
+           reprise dans la liste de l'UICN, le statut suivant sera indiqué :",'"NA*".',
+           style = "text-align:justify;"),
+
+     footer = modalButton("Masquer")
      
    ))
    
@@ -719,10 +747,12 @@ server <- function(input, output, session) {
  
  observeEvent(input$infoRythmeActiv, {
    showModal(modalDialog(
-     title = "Information Rythme d'activité",
-     paste("Le Graphique du rythme d'activité reprends par heure la somme des individus observés pour le site et l'espèce concernée ", sep =""),
-     br(),
-     paste("Ce graphique permet de renseigner les heures d'activité prédominante chez l'espèce observée dans le site demandé", sep =""),
+     title = "Description détaillée du diagramme du rythme d'activité",
+     h5("Le diagramme du rythme d'activité reprend de manière horaire la somme du nombre d'individus observés pour le site et l'espèce 
+        sélectionnés. Il permet de donner une indication de la période d'activité prédominante.",
+        style = "text-align:justify"),
+     h5("Il est possible d'obtenir cette analyse pour une ou plusieurs espèces, et pour un seul ou l'ensemble des sites.", 
+           style = "text-align:justify;"),
      footer = modalButton("Fermer")
      
    ))
@@ -997,8 +1027,8 @@ server <- function(input, output, session) {
     updateSelectizeInput(
       session,
       inputId = "selectSp_tab",
-      choices = c("All", data()$Species),
-      selected = "All"
+      choices = c("Toutes les espèces", data()$Species),
+      selected = "Toutes les espèces"
     )  
   })
   
@@ -1006,8 +1036,8 @@ server <- function(input, output, session) {
     updateSelectizeInput(
       session,
       inputId = "selectLoc_tab",
-      choices = c("All", data()$Site),
-      selected = "All"
+      choices = c("Tous les sites", data()$Site),
+      selected = "Tous les sites"
     )  
   })
   
@@ -1018,26 +1048,26 @@ server <- function(input, output, session) {
     req(input$selectSp_tab, input$selectLoc_tab)
     
     #Tentative de caser le ALL
-    if(input$selectSp_tab == "All")
+    if(input$selectSp_tab == "Toutes les espèces")
       selesp <- as.data.frame(data()$Species)
     else 
       selesp <- as.data.frame(input$selectSp_tab, 
                               row.names = NULL)
     colnames(selesp) <- "Species"
     #Loc
-    if(input$selectLoc_tab == "All")
+    if(input$selectLoc_tab == "Tous les sites")
       selloc <- as.data.frame(data()$Site)
     else
       selloc <- as.data.frame(input$selectLoc_tab,
                               row.names = NULL)
     colnames(selloc) <- "Site"
     #bondocde
-    if(input$selectLoc_tab == "All")
+    if(input$selectLoc_tab == "Tous les sites")
       {
       nb <- aggregate(Individuals ~ Species, data = data(), length)
       data_alt <- data()
       data_alt <- subset(data_alt, select = -Site)
-      data_alt$Site <- rep("All", length(data_alt$Species))
+      data_alt$Site <- rep("Tous", length(data_alt$Species))
       nj <- data.frame(nb$Species,rep(sum(CameraJour()$Jours),length(nb$Species)))
       names(nj) <- c("Species","Jours")
       table <- merge(nb,nj,by=c("Species"))
@@ -1054,9 +1084,9 @@ server <- function(input, output, session) {
       names(nmoy) <- c("Species","Site","nmoy")
       table <- merge(table,nmoy,by=c("Species","Site"))
     }
-    if(input$selectLoc_tab != "All")
+    if(input$selectLoc_tab != "Tous les sites")
       table <- merge(table, selloc, by = "Site")
-    if(input$selectSp_tab != "All")
+    if(input$selectSp_tab != "Toutes les espèces")
       table <- merge(table, selesp, by = "Species")
     table$Jours <- table$Individuals/table$Jours
     table <- table[,c("Species","Site","Individuals","Jours","nmoy")]
@@ -1115,10 +1145,10 @@ server <- function(input, output, session) {
     # On cherche à inclure le statut IUCN 
     # On lie la table initiale à la table IUCN par l'espèce (ainsi on à le statut pour chaque espèce présente dans la liste)
     req(IUCN())
-    IUCN <- IUCN()
-    datEN <- merge(dfinal,IUCN,by="Species",all.x=T)
+    UICN <- IUCN()
+    datEN <- merge(dfinal,UICN,by="Species",all.x=T)
     # On ne garde dans un nouveau d.f que les individus qui ont un statut IUCN EN ou CR.
-    datEN <- subset(datEN,datEN$IUCN=="EN"|datEN$IUCN=="CR")
+    datEN <- dplyr::filter(datEN, IUCN=="EN" | IUCN=="CR")
     # On aggrège alors les nb d'indiv par espèce et par caméra.
     EN <- aggregate(Individuals ~ Species + Camera, data = datEN, sum)
     # On aggrège le nombre d'entrées par caméra pour obtenir le nb d'esp en danger (CR ou EN) par caméra.
@@ -1147,7 +1177,7 @@ server <- function(input, output, session) {
     infos_cam1$Camera=as.character(infos_cam1$Camera)
     Camdon$Camera=as.character(Camdon$Camera) # On transforme les valeurs des champs Camera en character afin de pouvoir effectuer la jointure
     
-    Camdon2 = left_join(Camdon,infos_cam1, by = c("Camera" = "Camera")) # C'est ainsi que l'on effectue la jointure,
+    Camdon2 = right_join(Camdon,infos_cam1, by = c("Camera" = "Camera")) # C'est ainsi que l'on effectue la jointure,
     # La fonction left_join permet de réaliser une jointure gauche, on va associer à chaque Camera de la variable Camdon les données des caméras d'infos_cam. Si un champ de la variable 
     # infos_cam ne contenait pas de valeur pour une ou certaines des camera de Camdon, 
     # on aurai des NO_DATA sur Camdon2 pour les lignes manquantes. De plus, s'il y avait des 
@@ -1320,19 +1350,169 @@ server <- function(input, output, session) {
   )
   
   
-  # Préparation des données pour export csv :
+  # Création des données et export csv selon les envies de Davy : ----------------------------
   
+  # On crée d'abord la matrice espèce/caméra/nb d'indiv pour ces champs :
+  mat <- reactive({
+  # On va chercher le fichier de données
+  req(data())
+  dfinal <- data()
+  # On crée à présent la matrice nb d'indiv par caméra et par espèce : 
+  # Pour celà, on s'assure d'abord bien que les champs Camera et Species sont des character : 
+  dfinal$Camera <- as.character(dfinal$Camera)
+  dfinal$Species <- as.character(dfinal$Species)
+  # Ensuite, on veut faire de ces champs des facteurs pour construire la matrice. 
+  #Pour celà, comme on veut que le facteur ait le même nombre de valeurs que de niveaux, 
+  # on aggrège les donnée des espèces et des caméras séparément et on les transforme en facteurs
+  # avec autant de niveaux que de valeurs :
+  cam <- aggregate(Individuals ~ Camera, data=dfinal, sum)    
+  camvec <- factor(cam$Camera)
+  spec <- aggregate(Individuals ~ Species, data=dfinal, sum)
+  speciesvec <- factor(spec$Species)
+  # On extrait de ces facteurs/vecteurs le nombre de niveaux pour réaliser les boucles de 
+  # remplissage de la matrice :
+  nivcamvec <- as.numeric(nlevels(camvec))
+  nivspeciesvec <- as.numeric(nlevels(speciesvec))
   
+  # On intitialise alors les boucles en créant une matrice X avec autant de colonnes que de 
+  # niveaux pour le facteur espèce et autant de lignes que de niveaux pour le facteur caméra.
+  # Enfin, on initialise également les valeurs i et j qui permettent de faire tourner la boucle : 
   
+  # X à pour noms de colonnes les noms d'espèces et pour noms de lignes les noms de caméras.
+  X = matrix(data=0, nrow=nivcamvec, ncol=nivspeciesvec)
+  colnames(X) <- as.character(levels(speciesvec))
+  rownames(X) <- as.character(levels(camvec))
+  j=1
+  i=1
+  
+  # La boucle de remplissage est comme ci-après, pour chaque colone (= chaque espèce = chaque niveaux du facteur espèce)
+  # on va réaliser une écriture du nombre d'individus de telle caméra, et passer à la caméra 
+  # suivante jusqu'à finir la colonne, et passer à la colonne suivante, etc...
+  # Les écritures se font par filtration des entrées qui concernent une espèce et une caméra 
+  # en particulier. S'il n'y à aucune entrée correspondante, on attribue à la case matricielle 
+  # un numérique = 0. Sinon, on attribue à cette case le nombre d'individus sommés de chaque entrées.
+  for (i in 1:nivspeciesvec) {
+    for (j in 1:nivcamvec) {
+      sub <- subset(dfinal, dfinal$Species==speciesvec[i] & dfinal$Camera==camvec[j])
+      if (is.null(sum(sub$Individuals))) { X[j,i]=0}
+      else {X[j,i]=sum(sub$Individuals)}
+    }
+  }
+  
+  X <- as.data.frame(X)
+  setDT(X, keep.rownames = TRUE)[]
+  X <- rename(X, "Camera"="rn")
+  
+  X
+})
+  
+# Ensuite on crée un d.f richesse spécifique par caméra, selon une méthode analogue : 
+  richspecam <- reactive({
+    req(data())
+    dfinal <- data()
+    dfinal$Camera <- as.character(dfinal$Camera)
+    cam <- aggregate(Individuals ~ Camera, data=dfinal, sum)    
+    camvec <- factor(cam$Camera)
+    nivcamvec <- as.numeric(nlevels(camvec))
+    
+    Richmat = matrix(data=0, nrow=nivcamvec, ncol=1)
+    rownames(Richmat) <- as.character(levels(camvec))
+    colnames(Richmat) <- "Richesse"
+    for (i in 1:nivcamvec) {
+      tri <- dplyr::select(dfinal,Camera,Species)
+      sub1 <- subset(tri, tri$Camera==camvec[i])
+      sub1 <- factor(sub1$Species)
+      Richmat[i,1] <- nlevels(sub1)
+    }
+    
+    Rich <- as.data.frame(Richmat)
+    setDT(Rich, keep.rownames = TRUE)[]
+    Rich <- rename(Rich, "Camera"="rn")
+    
+    Rich
+  })
+  
+  # On calcule à présent les données concernant les sp en danger EN et CR (RAI et Nb d'espèces pour chaque caméra)
+  
+  RAI_nb_EN <- reactive ({
+  # On va d'abord chercher les données : 
+  req(data())
+  dfinal <- data()
+  req(IUCN())
+  IUCN <- IUCN()
+  # On joint les données IUCN au data par les noms d'espèces :
+  datEN <- merge(dfinal,IUCN,by="Species",all.x=T)
+  # On ne garde dans un nouveau d.f que les individus qui ont un statut IUCN EN ou CR.
+  datEN <- subset(datEN,datEN$IUCN=="EN"|datEN$IUCN=="CR")
+  # On aggrège le nombre d'entrées par caméra pour obtenir le nb d'esp en danger (CR ou EN)
+  # par caméra (avec les 2 aggregate ci_dessous)
+  EN <- aggregate(Individuals ~ Species + Camera, data = datEN, sum)
+  ENCAM <- aggregate (Individuals ~ Camera, data = EN, length)
+  # On renome la colonne individuals de ENCAM qui n'indique désormais plus que le nombre 
+  # d'espèce en danger CR ou EN
+  ENCAM <- rename(ENCAM,"N_espece_EN" = "Individuals")
+  # On aggrège datEN (qui contient les espèces en danger) selon 
+  # le nombre d'entrées par caméra pour obtenir le nb de détection
+  nbdetection <- aggregate(Individuals~Camera,data=datEN, length)
+  # On renomme à nouveau Individuals qui ne contient plus le nb d'individus, mais le nb de détections par cam
+  nbdetection <- rename(nbdetection,"NbdetEN"="Individuals")
+  # On colle le nb d'espèces en danger et le nb de détection d'espèces en danger par Caméra
+  donEN <- merge(nbdetection,ENCAM,by="Camera",all=T)
+  # On va chercher les infos des caméras pour jointure des coordonnées et calcul du RAI (durée de mise en fonction des caméra contenu dans coordcam)
+  req(coordcam())
+  infos_cam <- coordcam()
+  # On sélectionne les colonnes d'intérêt dans un nouveau df info_cam1
+  infos_cam1 <- dplyr::select(infos_cam,Camera,utm_x,utm_y,Jours)
+  infos_cam1$Jours <- as.numeric(infos_cam1$Jours)
+  # On s'assure que toutes les caméras sont bien écrites en character
+  infos_cam1$Camera=as.character(infos_cam1$Camera)
+  # On joint les données du fichier contenant les infos (Jours, utm_x et utm_y) aux autres infos (nb de dét et nb esp EN) par caméra
+  donEN <- merge(donEN,infos_cam1, by="Camera",all=T )
+  # On vire les NA pour les caméra qui n'ont aucune espèce EN ou CR et on les remplace par des 0
+  donEN[is.na(donEN)]<-0
+  # On crée une nouvelle colonne RAI pour les espèce EN et CR
+  donEN$RAI <- (donEN$NbdetEN/donEN$Jours)
+  
+  donEN
+})
+  
+  # Jointure des 3 tableaux de données pour obtenir le d.f final : 
+  tabexpmap <- reactive ({
+    # On va chercher le dernier tableau : 
+    req(RAI_nb_EN())
+    donEN <-  RAI_nb_EN()
+    # On sélectionne et renomme les colonne du dernier tableau pour la mise en forme finale :
+  donENfin <- dplyr::select(donEN,Camera,N_espece_EN,RAI_espece_EN = RAI, utm_x, utm_y)
+  # On à plus qu'à coller le d.f X au vecteur richesse, et joindre par après la matrice des sp EN et CR :
+  # On va chercher les deux tables : 
+  req(richspecam())
+  Richvec <- richspecam()
+  req(mat())
+  X <- mat()
+  # Dans un nouveau d.f, on lie la matrice 1 à la richesse spé par cam
+  Ok1 <- merge(X,Richvec,by="Camera",all.x=T)
+  Ok2 <- merge(Ok1,donENfin,by="Camera",all.x=T)
+  Ok2 <- rename(Ok2, "CT"="Camera")
+  
+  Ok2
+  })
  
+# Gestion du téléchargement du tableau GPS .csv demandé par davy : 
+  output$downloadtabletot <- downloadHandler(
+    filename = "matrice_indiv_espece_camera_Rich&RAI_EN.csv",
+    content = function(file) {
+      write.table(tabexpmap(), file,quote = TRUE, sep = ";",dec=".",row.names = FALSE, col.names = TRUE)
+    } 
+    
+  )
   
   #Sélection esp et site pour le graphe d'acti en 24h
   observe({
     updateSelectizeInput(
       session,
       inputId = "selectSp_graph",
-      choices = c("All", data()$Species),
-      selected = "All"
+      choices = c("Toutes les espèces", data()$Species),
+      selected = "Toutes les espèces"
     )  
   })
   
@@ -1340,8 +1520,8 @@ server <- function(input, output, session) {
     updateSelectizeInput(
       session,
       inputId = "selectLoc_graph",
-      choices = c("All", data()$Site),
-      selected = "All"
+      choices = c("Tous les sites", data()$Site),
+      selected = "Tous les sites"
     )  
   })
   
@@ -1358,10 +1538,10 @@ server <- function(input, output, session) {
     # récupérer le dataframe nettoyé
     #df <- data()
     # si "All" est encodé, graphique de toute les epsèces, si le nome d'une espèe est encodé, le prend en compte
-    if(input$selectLoc_graph != "All")
+    if(input$selectLoc_graph != "Tous les sites")
      df <- df[df$Site == k,]
     
-    if (input$selectSp_graph != "All")
+    if (input$selectSp_graph != "Toutes les espèces")
       df <- df[df$Species == x,]
     
     
