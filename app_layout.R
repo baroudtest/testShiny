@@ -64,7 +64,7 @@ ui <- dashboardPage(
   #Titre
   #-------------------------------
   dashboardHeader(
-    title = "Application",
+    title = "EurêCam!",
     titleWidth = 300,
     disable = F
   ),
@@ -297,8 +297,7 @@ ui <- dashboardPage(
                     selectizeInput(inputId = "selectSite",
                                    label = "",
                                    choices = "",
-                                   selected = "",
-                                   multiple = TRUE),
+                                   selected = ""),
                     withSpinner(plotOutput("accumul")),
                     downloadButton("downloadAccumul", "Download Graph")
                 )
@@ -621,6 +620,7 @@ server <- function(input, output, session) {
     showModal(modalDialog(
       title = "Vérification des noms d'espèces",
       paste("L'application ne reconnait pas les espèces suivantes :", sep =""),
+      br(),
       paste(noms()),
       br(),
       h5("Cela est dû au format incorrect du nom de l'espèce dans votre jeu de données. 
