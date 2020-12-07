@@ -605,21 +605,14 @@ server <- function(input, output, session) {
     showModal(modalDialog(
       title = "Vérification des noms d'espèces",
       paste("L'application ne reconnait pas les espèces suivantes :", sep =""),
-      br(),
-      br(),
       paste(noms()),
-      br(),
       br(),
       h5("Cela est dû au format incorrect du nom de l'espèce dans votre jeu de données. 
       Veuillez vous référer aux noms scientifiques présents sur le site de l'IUCN, remplacez-les dans 
       votre jeu de données et rechargez vos fichiers.",
          style = "text-align:justify;"),
-      br(),
-      br(),
       h5("Si le problème persiste après avoir modifié les noms, cela signifie que l'espèce n'est pas présente dans notre base de données. ",
             style = "text-align:justify;"),
-      br(),
-      br(),
       h5("Vous pouvez alors l'ajouter vous même dans le fichier statuts.csv et relancer l'application.
       Les analyses fournies restent valables, mais les espèces restantes dans cette liste ne pourront pas 
       être prises en compte dans le recensement et la répartition des espèces menacées.",
@@ -1012,8 +1005,8 @@ server <- function(input, output, session) {
     updateSelectizeInput(
       session,
       inputId = "selectSp_tab",
-      choices = c("All", data()$Species),
-      selected = "All"
+      choices = c("Toutes les espèces", data()$Species),
+      selected = "Toutes les espèces"
     )  
   })
   
@@ -1021,8 +1014,8 @@ server <- function(input, output, session) {
     updateSelectizeInput(
       session,
       inputId = "selectLoc_tab",
-      choices = c("All", data()$Site),
-      selected = "All"
+      choices = c("Tous les sites", data()$Site),
+      selected = "Tous les sites"
     )  
   })
   
@@ -1033,26 +1026,26 @@ server <- function(input, output, session) {
     req(input$selectSp_tab, input$selectLoc_tab)
     
     #Tentative de caser le ALL
-    if(input$selectSp_tab == "All")
+    if(input$selectSp_tab == "Toutes les espèces")
       selesp <- as.data.frame(data()$Species)
     else 
       selesp <- as.data.frame(input$selectSp_tab, 
                               row.names = NULL)
     colnames(selesp) <- "Species"
     #Loc
-    if(input$selectLoc_tab == "All")
+    if(input$selectLoc_tab == "Tous les sites")
       selloc <- as.data.frame(data()$Site)
     else
       selloc <- as.data.frame(input$selectLoc_tab,
                               row.names = NULL)
     colnames(selloc) <- "Site"
     #bondocde
-    if(input$selectLoc_tab == "All")
+    if(input$selectLoc_tab == "Tous les sites")
       {
       nb <- aggregate(Individuals ~ Species, data = data(), length)
       data_alt <- data()
       data_alt <- subset(data_alt, select = -Site)
-      data_alt$Site <- rep("All", length(data_alt$Species))
+      data_alt$Site <- rep("Tous", length(data_alt$Species))
       nj <- data.frame(nb$Species,rep(sum(CameraJour()$Jours),length(nb$Species)))
       names(nj) <- c("Species","Jours")
       table <- merge(nb,nj,by=c("Species"))
@@ -1069,9 +1062,9 @@ server <- function(input, output, session) {
       names(nmoy) <- c("Species","Site","nmoy")
       table <- merge(table,nmoy,by=c("Species","Site"))
     }
-    if(input$selectLoc_tab != "All")
+    if(input$selectLoc_tab != "Tous les sites")
       table <- merge(table, selloc, by = "Site")
-    if(input$selectSp_tab != "All")
+    if(input$selectSp_tab != "Toutes les espèces")
       table <- merge(table, selesp, by = "Species")
     table$Jours <- table$Individuals/table$Jours
     table <- table[,c("Species","Site","Individuals","Jours","nmoy")]
@@ -1496,8 +1489,8 @@ server <- function(input, output, session) {
     updateSelectizeInput(
       session,
       inputId = "selectSp_graph",
-      choices = c("All", data()$Species),
-      selected = "All"
+      choices = c("Toutes les espèces", data()$Species),
+      selected = "Toutes les espèces"
     )  
   })
   
@@ -1505,8 +1498,8 @@ server <- function(input, output, session) {
     updateSelectizeInput(
       session,
       inputId = "selectLoc_graph",
-      choices = c("All", data()$Site),
-      selected = "All"
+      choices = c("Tous les sites", data()$Site),
+      selected = "Tous les sites"
     )  
   })
   
@@ -1523,10 +1516,10 @@ server <- function(input, output, session) {
     # récupérer le dataframe nettoyé
     #df <- data()
     # si "All" est encodé, graphique de toute les epsèces, si le nome d'une espèe est encodé, le prend en compte
-    if(input$selectLoc_graph != "All")
+    if(input$selectLoc_graph != "Tous les sites")
      df <- df[df$Site == k,]
     
-    if (input$selectSp_graph != "All")
+    if (input$selectSp_graph != "Toutes les espèces")
       df <- df[df$Species == x,]
     
     
