@@ -605,6 +605,7 @@ server <- function(input, output, session) {
     showModal(modalDialog(
       title = "Vérification des noms d'espèces",
       paste("L'application ne reconnait pas les espèces suivantes :", sep =""),
+      br(),
       paste(noms()),
       br(),
       h5("Cela est dû au format incorrect du nom de l'espèce dans votre jeu de données. 
