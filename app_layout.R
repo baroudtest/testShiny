@@ -295,8 +295,7 @@ ui <- dashboardPage(
                     selectizeInput(inputId = "selectSite",
                                    label = "",
                                    choices = "",
-                                   selected = "",
-                                   multiple = TRUE),
+                                   selected = ""),
                     withSpinner(plotOutput("accumul")),
                     downloadButton("downloadAccumul", "Download Graph")
                 )
