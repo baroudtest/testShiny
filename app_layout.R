@@ -62,7 +62,7 @@ ui <- dashboardPage(
   #Titre
   #-------------------------------
   dashboardHeader(
-    title = "EuréKam!",
+    title = "EurêCam!",
     titleWidth = 300,
     disable = F
   ),
