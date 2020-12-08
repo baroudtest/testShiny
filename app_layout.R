@@ -144,6 +144,8 @@ ui <- dashboardPage(
                     hr(),
                     fileInput(inputId = "status",
                               label = "Statuts UICN"),
+                    
+                    actionButton("BoutonSp","Espèces non reconnues ?"),
                     h5("Chargez ci-dessus un fichier .csv reprenant le statut de conservation ",
                        a(href = "https://www.iucnredlist.org/", "UICN"), 
                        " des espèces détéctées lors de l'inventaire. Un exemplaire est disponible dans l'onglet 'Analyse & Reporting' 
@@ -437,6 +439,7 @@ server <- function(input, output, session) {
   
   infoCam <- reactive({
     req(input$infocam)
+    req(req(errcam()[5] == 4))
     infocamera <- read.csv(input$infocam$datapath,
                            header = TRUE,
                            sep = ";",
@@ -699,6 +702,41 @@ server <- function(input, output, session) {
     
   })
   
+ 
+ observeEvent(input$BoutonSp, {
+   
+   if (paste(noms()) != 'character(0)') {
+   showModal(modalDialog(
+     title = "Vérification des noms d'espèces",
+     paste("L'application ne reconnait pas les espèces suivantes :", sep =""),
+     br(),
+     paste(noms()),
+     br(),
+     h5("Cela est dû au format incorrect du nom de l'espèce dans votre jeu de données. 
+      Veuillez vous référer aux noms scientifiques présents sur le site de l'IUCN, remplacez-les dans 
+      votre jeu de données et rechargez vos fichiers.",
+        style = "text-align:justify;"),
+     h5("Si le problème persiste après avoir modifié les noms, cela signifie que l'espèce n'est pas présente dans notre base de données. ",
+        style = "text-align:justify;"),
+     h5("Vous pouvez alors l'ajouter vous même dans le fichier statuts.csv et relancer l'application.
+      Les analyses fournies restent valables, mais les espèces restantes dans cette liste ne pourront pas 
+      être prises en compte dans le recensement et la répartition des espèces menacées.",
+        style = "text-align:justify;"),
+  
+     footer = modalButton("Masquer")
+   )) }
+   
+   else {showModal(modalDialog(
+     title = "Vérification des noms d'espèces",
+     paste("L'application reconnait toutes les espèces.", sep =""),
+     br(),
+     
+     
+     footer = modalButton("Masquer")
+   ))
+     }
+ })
+
  
  observeEvent(input$infoTableEsp, {
    showModal(modalDialog(
@@ -1791,9 +1829,14 @@ server <- function(input, output, session) {
 # Erreur Caméra
 
 errcam <- reactive({
-  req(infoCam())
+  req(input$infocam)
   
-  df <- infoCam()
+  df <-   infocamera <- read.csv(input$infocam$datapath,
+                                   header = TRUE,
+                                   sep = ";",
+                                   quote = '"',
+                                   colClasses = "character")
+  
   
   CamOk <- 0
   DurOk <- 0
