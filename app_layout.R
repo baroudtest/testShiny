@@ -1720,7 +1720,7 @@ server <- function(input, output, session) {
   # gérer le téléchargement du graphique circulaire
   output$downloadPie <- downloadHandler(
     # filename pour définir le nom par défaut du fichier produit, Content pour choisir le graph dans l'image
-    filename = function() {paste("Ab_rel",input$selectSite,input$selectNbEsp, '.png', sep='_') },
+    filename = function() {paste("Ab_rel",input$selectSitePie,input$selectNbEsp, '.png', sep='_') },
     content = function(file) {
       
       png(file)
@@ -1731,9 +1731,9 @@ server <- function(input, output, session) {
   )
   
   # Test de DL en .SVG
-  output$downloadGraphSVG <- downloadHandler(
+  output$downloadPieSVG <- downloadHandler(
     # filename pour définir le nom par défaut du fichier produit, Content pour choisir le graph dans l'image
-    filename = function() {paste("Ab_rel",input$selectSite,input$selectNbEsp, '.svg', sep='_') },
+    filename = function() {paste("Ab_rel",input$selectSitePie,input$selectNbEsp, '.svg', sep='_') },
     content = function(file) {
       
       svg(file)
