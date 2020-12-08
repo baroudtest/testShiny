@@ -50,6 +50,8 @@ library(shinydashboard)
 #install.packages("shinydashboard")
 library(tidyr)
 #install.packages("tidyr")
+library(MoLE)
+#install.packages("MoLE")
 
 #-------------------------------
 #-------------------------------
@@ -354,7 +356,19 @@ ui <- dashboardPage(
                        tabPanel(title = "Diagramme en tarte",
                                 width = 12,
                                 status = "warning",
-                                solidHeader = T
+                                solidHeader = T,
+                                selectizeInput(inputId = "selectNbEsp",
+                                               label = "Nombre d'espèces à afficher",
+                                               choices = "",
+                                               selected =""),
+                                selectizeInput(inputId = "selectSitePie",
+                                               label = "Sélection du site",
+                                               choices = "",
+                                               selected = ""),
+                                actionButton("infoPie","Info"),
+                                withSpinner(plotOutput("abrelPie")),
+                                downloadButton("downloadPie", "Télécharger le Graphique en .png"),
+                                downloadButton("downloadPieSVG", "Télécharger le Graphique en .SVG")
                        )
 
    
@@ -616,10 +630,10 @@ server <- function(input, output, session) {
       Veuillez vous référer aux noms scientifiques présents sur le site de l'IUCN, remplacez-les dans 
       votre jeu de données et rechargez vos fichiers.",
          style = "text-align:justify;"),
-      h5("Si le problème persiste après avoir modifié les noms, cela signifie que l'espèce n'est pas présente dans notre base de données. ",
+      h5("Si le problème persiste après avoir modifié les noms, cela signifie que l'espèce n'est pas présente 
+         dans notre base de données. Vous pouvez alors l'ajouter vous-même dans le fichier statuts.csv et relancer l'application.",
             style = "text-align:justify;"),
-      h5("Vous pouvez alors l'ajouter vous même dans le fichier statuts.csv et relancer l'application.
-      Les analyses fournies restent valables, mais les espèces restantes dans cette liste ne pourront pas 
+      h5("Les analyses fournies restent valables, mais les espèces restantes dans cette liste ne pourront pas 
       être prises en compte dans le recensement et la répartition des espèces menacées.",
             style = "text-align:justify;"),
       footer = modalButton("Masquer")
@@ -791,6 +805,23 @@ server <- function(input, output, session) {
         style = "text-align:justify"),
      h5("Il est possible d'obtenir cette analyse pour une ou plusieurs espèces, et pour un seul ou l'ensemble des sites.", 
            style = "text-align:justify;"),
+     footer = modalButton("Fermer")
+     
+   ))
+   
+ })
+ 
+ observeEvent(input$infoPie, {
+   showModal(modalDialog(
+     title = "Description détaillée du diagramme d'abondance relative",
+     h5("Le diagramme d'abondance relative reprend la part relative du nombre d'individus observés
+        selon les espèces. Afin de faciliter la lecture du graphique, seules les espèces les plus
+        représentées sont affichées, les autres étant sommées dans la catégorie",'"Autres".',
+        style = "text-align:justify"),
+     h5("Il est possible de changer le nombre d'espèces que vous souhaitez voir s'afficher pour que
+        le graphique s'adapte au mieux à votre jeu de données. Vous pouvez également choisir le site
+        pour lequel vous désirez afficher le diagramme.", 
+        style = "text-align:justify;"),
      footer = modalButton("Fermer")
      
    ))
@@ -1645,6 +1676,112 @@ server <- function(input, output, session) {
     }
     
   )
+
+########################################################################     
+########################################################################
+  #Sélection esp et site pour le pie chart
+  observe({
+    updateSelectizeInput(
+      session,
+      inputId = "selectSitePie",
+      choices = c("Tous les sites", data()$Site),
+      selected = "Tous les sites"
+    )  
+  })
+  
+  observe({
+    updateSelectizeInput(
+      session,
+      inputId = "selectNbEsp",
+      choices = c(1:length(unique(data()$Species))),
+      selected = "6"
+    )  
+  })
+  
+  # Création du pie chart en réactive de façon à pouvoir le télécharger -----------------
+  
+  pieChart <- function (){
+    # récupérer le dataframe nettoyé et l'espèce encodée 
+    dfinal <- data()
+    
+    site <- as.character(input$selectSitePie)
+    
+    n <- as.numeric(input$selectNbEsp)
+
+    # si "All" est encodé, graphique de toute les epsèces, si le nome d'une espèe est encodé, le prend en compte
+    if(input$selectSitePie == "Tous les sites"){
+      ab <- aggregate(Individuals ~ Species, data = dfinal, sum)
+      tot <- sum(dfinal$Individuals)
+      ab$Individuals <- (ab$Individuals/tot)*100
+
+      abMax <- MAX(ab$Individuals, rank=1:n)
+      ab_o <- ab[-abMax,]
+      ab <- ab[abMax,]
+      ab[n+1,"Species"] <- "Autres"
+      ab[n+1,"Individuals"] <- sum(ab_o$Individuals)
+      ab <- ab[order(ab$Individuals),]
+    
+      pie(ab$Individuals,labels=ab$Species,main="Abondance relative des espèces")
+    } else {
+      sites <- aggregate(Individuals ~ Site, data = dfinal, sum)
+      sites <- sites$Site
+      nSites <- length(sites)
+      
+      ab2 <- aggregate(Individuals ~ Species+Site, data = dfinal, sum)
+
+      ab2_sep <- subset(ab2, ab2$Site==input$selectSitePie)
+      ab2_sep <- ab2_sep[,-2]
+      tot <- sum(ab2_sep$Individuals)
+      ab2_sep$Individuals <- (ab2_sep$Individuals/tot)*100
+        
+      ab2Max <- MAX(ab2_sep$Individuals, rank=1:n)
+      ab2_o <- ab2_sep[-ab2Max,]
+      ab2_sep <- ab2_sep[ab2Max,]
+      ab2_sep[n+1,"Species"] <- "Autres"
+      ab2_sep[n+1,"Individuals"] <- sum(ab2_o$Individuals)
+      ab2_sep <- ab2_sep[order(ab2_sep$Individuals),]
+        
+      pie(ab2_sep$Individuals,labels=ab2_sep$Species,
+            main=paste("Abondance relative des espèces",input$selectSitePie,sep=" - "))
+      
+    }
+    
+  } #reactive
+  
+  # Encodage du graphique réactif en output de manière à l'afficher
+  output$abrelPie <- renderPlot({
+    req(input$file)
+    
+    pieChart()
+  })
+  
+  # gérer le téléchargement du graphique circulaire
+  output$downloadPie <- downloadHandler(
+    # filename pour définir le nom par défaut du fichier produit, Content pour choisir le graph dans l'image
+    filename = function() {paste("Ab_rel",input$selectSitePie,input$selectNbEsp, '.png', sep='_') },
+    content = function(file) {
+      
+      png(file)
+      print(pieChart())
+      dev.off() 
+    }
+    
+  )
+  
+  # Test de DL en .SVG
+  output$downloadPieSVG <- downloadHandler(
+    # filename pour définir le nom par défaut du fichier produit, Content pour choisir le graph dans l'image
+    filename = function() {paste("Ab_rel",input$selectSitePie,input$selectNbEsp, '.svg', sep='_') },
+    content = function(file) {
+      
+      svg(file)
+      print(pieChart())
+      dev.off()
+    }
+    
+  )
+########################################################################  
+######################################################################## 
   
   ## message d'erreur ==> verification des noms de colonnes
   
