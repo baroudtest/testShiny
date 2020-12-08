@@ -146,13 +146,20 @@ ui <- dashboardPage(
                     hr(),
                     fileInput(inputId = "status",
                               label = "Statuts UICN"),
-                    
+ 
                     actionButton("BoutonSp","Espèces non reconnues ?"),
+                    
                     h5("Chargez ci-dessus un fichier .csv reprenant le statut de conservation ",
                        a(href = "https://www.iucnredlist.org/", "UICN"), 
                        " des espèces détéctées lors de l'inventaire. Un exemplaire est disponible dans l'onglet 'Analyse & Reporting' 
                        du site Faunefac.",
-                      style = "text-align:justify;")
+                      style = "text-align:justify;"),
+                    div(textOutput("erreurStat1"), style = "color:red"),
+                    br(),
+                    div(textOutput("erreurStat2"), style = "color:red"),
+                    br(),
+                    div(textOutput("erreurStat3"), style = "color:red"),
+                    
                     #h5("(ou à uploader du serveur de la fac : soit fait par l'utilisateur, soit automatique)")
                 ),#Fermeture box
                 
@@ -439,7 +446,7 @@ server <- function(input, output, session) {
   # Lecture et préparation des données issues des inputs : ---------------------------------
   
   IUCN <- reactive({
-    
+    req(errStat() == 2)
     req(input$status)
     esp <- read.csv(input$status$datapath,
                     header = TRUE,
@@ -642,6 +649,7 @@ server <- function(input, output, session) {
 
   
   
+  
   #Test Message d'erreur de fichier non conforme
   ################
   observeEvent(probleme(), {
@@ -667,6 +675,21 @@ server <- function(input, output, session) {
     ))
   })
   
+  observeEvent(ProblemeStat(), {
+    showModal(modalDialog(
+      title = "fichier des status UICN non conforme",
+      paste("Le fichier chargé ne correspond pas au format requis. veuillez charger une table de données conforme pour obtenir vos résultats. ", sep=""),
+      br(),
+      br(),
+      paste(errStat()[1]),
+      br(),
+      br(),
+      paste(errStat()[2]),
+      br(),
+    
+      footer = modalButton("Masquer")
+    ))
+  })
   observeEvent(ProblemeCam(), {
     showModal(modalDialog(
       title = "fichier d'info caméra non conforme",
@@ -2081,6 +2104,86 @@ output$erreurCam5 <- renderText({
 ProblemeCam <- reactive({
   req(errcam())
   req(errcam()[5] != 4)
+  
+  1
+})
+
+
+
+
+
+###################
+# Erreur Statut Vérification du fichier d'entrée, 
+#Si les colonnes nécessaires ne se retouvent pas dans le fichier, 
+#un blocage des calcluls s'effectue
+
+errStat <- reactive({
+  req(input$status)
+  
+  df <- read.csv(input$status$datapath,
+                  header = TRUE,
+                  sep = ";",
+                  quote = '"',
+                  colClasses = "character")
+  
+  
+  SpecOk <- 0
+  IUCNOk <- 0
+  
+  
+  x <- c(1,2)
+  
+  x <- names(df)
+  
+  ## Vérification du nom des colonnes et de leur présence
+  
+  if (x[1] == "Species") {SpecOk <- 1 }
+  else if (x[2] == "Species") {SpecOk <-1 }
+
+  
+  if (SpecOk == 1) {SpecOkk <- ""}
+  else { SpecOkk <- "Erreur, impossible de trouver la colonne 'Species'. vérifiez la syntaxe du jeu de donnée"}
+  
+  if (x[1] == "IUCN") {IUCNOk <- 1 }
+  else if (x[2] == "IUCN") {IUCNOk <-1 }
+
+  
+  if (IUCNOk == 1) {IUCNOkk <- ""}
+  else { IUCNOkk <- "Erreur, impossible de trouver la colonne 'IUCN'. vérifiez la syntaxe du jeu de donnée"}
+
+  # Somme des vérification ==> si = 2 , tout est OK
+  AllOk <- (SpecOk + IUCNOk )
+  
+  
+  if (AllOk == 2) {AlOk <- ""}
+  else {AlOk <- "Le fichier chargé ne correspond pas au format requis. veuillez charger une table de données conforme pour obtenir vos résultats. "}
+  
+  Staterr <- c(SpecOkk, IUCNOkk , AllOk, AlOk)
+  Staterr
+  
+})
+
+# encodage des texte en output
+
+output$erreurStat1 <- renderText({
+  req(input$status)
+  errStat()[1]
+})
+
+
+output$erreurStat2 <- renderText({
+  req(input$status)
+  errStat()[2]
+})
+
+output$erreurStat3 <- renderText({
+  req(input$status)
+  errStat()[4]
+})
+
+ProblemeStat <- reactive ({
+  req(errStat())
+  req(errStat()[3] != 2 )
   
   1
 })
