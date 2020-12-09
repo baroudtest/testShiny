@@ -2163,7 +2163,7 @@ errStat <- reactive({
   
 })
 
-# encodage des texte en output
+# encodage des message d'erreur en output 
 
 output$erreurStat1 <- renderText({
   req(input$status)
