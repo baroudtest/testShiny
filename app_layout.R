@@ -278,7 +278,7 @@ ui <- dashboardPage(
                     br(),
                     div(style ='overflow-x:scroll',
                         withSpinner(tableOutput("richesse"))),
-                    downloadButton("downloadCom", "Download")
+                    downloadButton("downloadCom", "Télécharger")
                 ),#Fermeture box
                 
                 box(title = "Indice de détection nocturne",
@@ -309,7 +309,7 @@ ui <- dashboardPage(
                                    selected = ""),
                     withSpinner(plotOutput("accumul")),
                     downloadButton("downloadAccumul", "Télécharger le Graphique en .png"),
-                    downloadButton("downloadaccumulSVG", "Télécharger le Graphique en .svg")
+                    downloadButton("downloadAccumulSVG", "Télécharger le Graphique en .svg")
                 )
               )#Fluidrow
               
@@ -339,7 +339,7 @@ ui <- dashboardPage(
                     actionButton("infoTableEsp","Info"),
                     div(style = 'overflow-y:scroll;height:520px',
                         withSpinner(tableOutput("ab_rel"))),
-                    downloadButton("downloadData", "Download")
+                    downloadButton("downloadData", "Télécharger le tableau")
                 ),#fermeture box
                 
                 tabBox(width = 6,
@@ -406,7 +406,7 @@ ui <- dashboardPage(
                                 status = "warning",
                                 solidHeader = T,
                                 withSpinner(plotOutput("carte_richesse_spe")),
-                                downloadButton("downloadMap1", "Download Map")
+                                downloadButton("downloadMap1", "Télécharger la carte")
                        ),
                        
                        tabPanel(title = "Carte des espèces menacées",
@@ -414,7 +414,7 @@ ui <- dashboardPage(
                                 status = "warning",
                                 solidHeader = T,
                                 withSpinner(plotOutput("carte_espèces_men")),
-                                downloadButton("downloadMap2", "Download Map")
+                                downloadButton("downloadMap2", "Télécharger la carte")
                        ),
                        
                        tabPanel(title = "Téléchargement des données cartographiques",
@@ -656,7 +656,7 @@ server <- function(input, output, session) {
   ################
   observeEvent(probleme(), {
     showModal(modalDialog(
-      title = "fichier non conforme",
+      title = "Fichier non conforme",
       paste("Le fichier chargé ne correspond pas au format requis. veuillez charger une table de données conforme pour obtenir vos résultats. ", sep=""),
       br(),
       paste(err()[1]),
@@ -679,7 +679,7 @@ server <- function(input, output, session) {
   
   observeEvent(ProblemeStat(), {
     showModal(modalDialog(
-      title = "fichier des status UICN non conforme",
+      title = "Fichier des status UICN non conforme",
       paste("Le fichier chargé ne correspond pas au format requis. veuillez charger une table de données conforme pour obtenir vos résultats. ", sep=""),
       br(),
       br(),
@@ -694,7 +694,7 @@ server <- function(input, output, session) {
   })
   observeEvent(ProblemeCam(), {
     showModal(modalDialog(
-      title = "fichier d'info caméra non conforme",
+      title = "Fichier d'info caméra non conforme",
       paste("Le fichier chargé ne correspond pas au format requis. veuillez charger une table de données conforme pour obtenir vos résultats. ", sep=""),
       br(),
       br(),
@@ -755,10 +755,10 @@ server <- function(input, output, session) {
       Veuillez vous référer aux noms scientifiques présents sur le site de l'IUCN, remplacez-les dans 
       votre jeu de données et rechargez vos fichiers.",
         style = "text-align:justify;"),
-     h5("Si le problème persiste après avoir modifié les noms, cela signifie que l'espèce n'est pas présente dans notre base de données. ",
+     h5("Si le problème persiste après avoir modifié les noms, cela signifie que l'espèce n'est pas présente dans notre base de données. 
+        Vous pouvez alors l'ajouter vous même dans le fichier statuts.csv et relancer l'application.",
         style = "text-align:justify;"),
-     h5("Vous pouvez alors l'ajouter vous même dans le fichier statuts.csv et relancer l'application.
-      Les analyses fournies restent valables, mais les espèces restantes dans cette liste ne pourront pas 
+     h5("Les analyses fournies restent valables, mais les espèces restantes dans cette liste ne pourront pas 
       être prises en compte dans le recensement et la répartition des espèces menacées.",
         style = "text-align:justify;"),
   
@@ -1000,27 +1000,20 @@ server <- function(input, output, session) {
       accumul()
       dev.off()
     }
-    
   )
+
+  
+  output$downloadAccumulSVG <- downloadHandler(
+    # filename pour définir le nom par défaut du fichier produit, Content pour choisir le graph dans l'image
+    filename = function() {paste('accumul', '.svg', sep='') }, #ou //input$selectSp si choix avec tot
+    content = function(file) {
+      
+      svg(file)
+      accumul()
+      dev.off()
+    }
     
-    output$downloadaccumulSVG <- downloadHandler(
-      # filename pour définir le nom par défaut du fichier produit, Content pour choisir le graph dans l'image
-      filename = function() {paste('accumul', '.svg', sep='') }, #ou //input$selectSp si choix avec tot
-      content = function(file) {
-        
-        svg(file)
-        accumul()
-        dev.off()
-      }
-    
-    #filename = "Modified_image.jpeg",
-    #contentType = "image/jpeg",
-    #content = function(file) {
-    ## copy the file from the updated image location to the final download location
-    # file.copy(updatedImageLoc(), file)
-    #  content = function(file) {
-    # ggsave(file, plot = plotInput(), device = "png")
-  )
+    )
   
   
   # indice d'occurence nocturne
