@@ -278,7 +278,7 @@ ui <- dashboardPage(
                     br(),
                     div(style ='overflow-x:scroll',
                         withSpinner(tableOutput("richesse"))),
-                    downloadButton("downloadCom", "Download")
+                    downloadButton("downloadCom", "Télécharger")
                 ),#Fermeture box
                 
                 box(title = "Indice de détection nocturne",
@@ -308,7 +308,8 @@ ui <- dashboardPage(
                                    choices = "",
                                    selected = ""),
                     withSpinner(plotOutput("accumul")),
-                    downloadButton("downloadAccumul", "Download Graph")
+                    downloadButton("downloadAccumul", "Télécharger le Graphique en .png"),
+                    downloadButton("downloadAccumulSVG", "Télécharger le Graphique en .svg")
                 )
               )#Fluidrow
               
@@ -338,7 +339,7 @@ ui <- dashboardPage(
                     actionButton("infoTableEsp","Info"),
                     div(style = 'overflow-y:scroll;height:520px',
                         withSpinner(tableOutput("ab_rel"))),
-                    downloadButton("downloadData", "Download")
+                    downloadButton("downloadData", "Télécharger le tableau")
                 ),#fermeture box
                 
                 tabBox(width = 6,
@@ -405,7 +406,7 @@ ui <- dashboardPage(
                                 status = "warning",
                                 solidHeader = T,
                                 withSpinner(plotOutput("carte_richesse_spe")),
-                                downloadButton("downloadMap1", "Download Map")
+                                downloadButton("downloadMap1", "Télécharger la carte")
                        ),
                        
                        tabPanel(title = "Carte des espèces menacées",
@@ -413,7 +414,7 @@ ui <- dashboardPage(
                                 status = "warning",
                                 solidHeader = T,
                                 withSpinner(plotOutput("carte_espèces_men")),
-                                downloadButton("downloadMap2", "Download Map")
+                                downloadButton("downloadMap2", "Télécharger la carte")
                        ),
                        
                        tabPanel(title = "Téléchargement des données cartographiques",
@@ -654,7 +655,7 @@ server <- function(input, output, session) {
   ################
   observeEvent(probleme(), {
     showModal(modalDialog(
-      title = "fichier non conforme",
+      title = "Fichier non conforme",
       paste("Le fichier chargé ne correspond pas au format requis. veuillez charger une table de données conforme pour obtenir vos résultats. ", sep=""),
       br(),
       paste(err()[1]),
@@ -677,7 +678,7 @@ server <- function(input, output, session) {
   
   observeEvent(ProblemeStat(), {
     showModal(modalDialog(
-      title = "fichier des status UICN non conforme",
+      title = "Fichier des status UICN non conforme",
       paste("Le fichier chargé ne correspond pas au format requis. veuillez charger une table de données conforme pour obtenir vos résultats. ", sep=""),
       br(),
       br(),
@@ -692,7 +693,7 @@ server <- function(input, output, session) {
   })
   observeEvent(ProblemeCam(), {
     showModal(modalDialog(
-      title = "fichier d'info caméra non conforme",
+      title = "Fichier d'info caméra non conforme",
       paste("Le fichier chargé ne correspond pas au format requis. veuillez charger une table de données conforme pour obtenir vos résultats. ", sep=""),
       br(),
       br(),
@@ -999,6 +1000,8 @@ server <- function(input, output, session) {
       dev.off()
     }
     
+  
+    
     
     #filename = "Modified_image.jpeg",
     #contentType = "image/jpeg",
@@ -1008,6 +1011,18 @@ server <- function(input, output, session) {
     #  content = function(file) {
     # ggsave(file, plot = plotInput(), device = "png")
   )
+  
+  output$downloadAccumulSVG <- downloadHandler(
+    # filename pour définir le nom par défaut du fichier produit, Content pour choisir le graph dans l'image
+    filename = function() {paste('accumul', '.svg', sep='') }, #ou //input$selectSp si choix avec tot
+    content = function(file) {
+      
+      svg(file)
+      accumul()
+      dev.off()
+    }
+    
+    )
   
   
   # indice d'occurence nocturne
