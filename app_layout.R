@@ -308,7 +308,8 @@ ui <- dashboardPage(
                                    choices = "",
                                    selected = ""),
                     withSpinner(plotOutput("accumul")),
-                    downloadButton("downloadAccumul", "Download Graph")
+                    downloadButton("downloadAccumul", "Télécharger le Graphique en .png"),
+                    downloadButton("downloadaccumulSVG", "Télécharger le Graphique en .svg")
                 )
               )#Fluidrow
               
@@ -360,7 +361,7 @@ ui <- dashboardPage(
                                 downloadButton("downloadGraphSVG", "Télécharger le Graphique en .SVG")
                                 ),
                        
-                       tabPanel(title = "Diagramme en tarte",
+                       tabPanel(title = "Diagramme Circulaire",
                                 width = 12,
                                 status = "warning",
                                 solidHeader = T,
@@ -1000,6 +1001,17 @@ server <- function(input, output, session) {
       dev.off()
     }
     
+  )
+    
+    output$downloadaccumulSVG <- downloadHandler(
+      # filename pour définir le nom par défaut du fichier produit, Content pour choisir le graph dans l'image
+      filename = function() {paste('accumul', '.svg', sep='') }, #ou //input$selectSp si choix avec tot
+      content = function(file) {
+        
+        svg(file)
+        accumul()
+        dev.off()
+      }
     
     #filename = "Modified_image.jpeg",
     #contentType = "image/jpeg",
@@ -1653,7 +1665,7 @@ server <- function(input, output, session) {
     # création du graphique, mise en couleur du "jour", nombre de 0 à 24h
     frete<- ggplot(eventdata, aes(x = eventhour, fill = Day)) + geom_histogram(breaks = seq(0, 
                                                                                             24)) + coord_polar(start = 0) + theme_minimal() + 
-      scale_fill_brewer() + ylab("Nombre de détection") + ggtitle(paste(input$selectSp_graph,"Répartition des détection par heure", sep=" ")) + 
+      scale_fill_brewer() + ylab("Nombre de détection") + ggtitle(paste("Rythme d'acivités de",input$selectSp_graph, sep=" ")) + 
       scale_x_continuous("", limits = c(0, 24), breaks = seq(0, 24), labels = seq(0, 
                                                                                   24))
     
