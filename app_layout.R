@@ -753,10 +753,10 @@ server <- function(input, output, session) {
       Veuillez vous référer aux noms scientifiques présents sur le site de l'IUCN, remplacez-les dans 
       votre jeu de données et rechargez vos fichiers.",
         style = "text-align:justify;"),
-     h5("Si le problème persiste après avoir modifié les noms, cela signifie que l'espèce n'est pas présente dans notre base de données. ",
+     h5("Si le problème persiste après avoir modifié les noms, cela signifie que l'espèce n'est pas présente dans notre base de données. 
+        Vous pouvez alors l'ajouter vous même dans le fichier statuts.csv et relancer l'application.",
         style = "text-align:justify;"),
-     h5("Vous pouvez alors l'ajouter vous même dans le fichier statuts.csv et relancer l'application.
-      Les analyses fournies restent valables, mais les espèces restantes dans cette liste ne pourront pas 
+     h5("Les analyses fournies restent valables, mais les espèces restantes dans cette liste ne pourront pas 
       être prises en compte dans le recensement et la répartition des espèces menacées.",
         style = "text-align:justify;"),
   
