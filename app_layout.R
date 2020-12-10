@@ -725,7 +725,7 @@ server <- function(input, output, session) {
          style = "text-align:justify;"),
       h5("- Le nombre de caméras déployées pour le site concerné ; ",
          style = "text-align:justify;"),
-      h5("- L'effort d'inventaire repris en caméra-jours. Cette information est obtenue en additionnant le nombre de jours de 
+      h5("- L'effort d'inventaire repris en caméra.jours. Cette information est obtenue en additionnant le nombre de jours de 
          déploiement respectif de chaque caméra installée sur le site concerné ;",
          style = "text-align:justify;"),
       h5("- La richesse spécifique ou richesse en espèce. Il s'agit du nombre d'espèces différentes identifiées pour le site
@@ -802,7 +802,7 @@ server <- function(input, output, session) {
            style = "text-align:justify;"),
 
      h5("- Le taux de détection ou RAI. Il est calculé en reprenant le nombre de détections précédement défini pour le site 
-           concerné divisé par le nombre de caméras/jours pour ce même site. Le nombre de caméras/jours correspond pour chacun des pièges 
+           concerné divisé par le nombre de caméra.jours pour ce même site. Le nombre de caméra.jours correspond pour chacun des pièges 
            photographiques placés sur le site à la somme de son temps de déploiement en jours ;",
            style = "text-align:justify;"),
 
