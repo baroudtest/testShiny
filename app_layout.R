@@ -506,6 +506,7 @@ server <- function(input, output, session) {
     
     req(input$file)
     req(err()[8] == 7)
+    #req(extFile == as.character('csv'))
     
     df<- read.csv(input$file$datapath,
                   header = TRUE,
@@ -1811,11 +1812,19 @@ server <- function(input, output, session) {
   err <- reactive({
     req(input$file)
     
+    right = function(text, num_char) {
+      substr(text, nchar(text) - (num_char-1), nchar(text))
+    }
+    
+   s <- as.character(right(input$file,3))
+  if (s == as.character('csv')) {
     df<- read.csv(input$file$datapath,
                   header = TRUE,
                   sep = ";",
                   quote = '"',
                   colClasses = "character")
+    
+    
     
     SpOk <- 0
     CamOk <- 0
@@ -1914,16 +1923,29 @@ server <- function(input, output, session) {
     if (AllOk == 7) {AlOk <- ""}
     else {AlOk <- "Le fichier chargé ne correspond pas au format requis. veuillez charger une table de données conforme pour obtenir vos résultats. "}
     
-    err <- c(SOk, DOk, COk, StOk, IOk, HOk, IgOk, AllOk,AlOk)
+    err <- c(SOk, DOk, COk, StOk, IOk, HOk, IgOk, AllOk,AlOk,s)
     err
+  }
+   
+   else{
+     
+     d <- "! Le fichier chargé n'est pas au format .csv !"
+     f <- ""
+     err <- c(d,f,f,f,f,f,f,f,f)
+     
+     
+   }
     
   })
   
   # encodage des texte en output
   
+
+  
   output$erreur1 <- renderText({
     req(input$file)
     err()[1]
+   
   })
   
   
@@ -1991,6 +2013,13 @@ server <- function(input, output, session) {
 errcam <- reactive({
   req(input$infocam)
   
+  right = function(text, num_char) {
+    substr(text, nchar(text) - (num_char-1), nchar(text))
+  }
+  
+  s <- as.character(right(input$infocam,3))
+  
+  if (s == as.character('csv')) { 
   df <-   infocamera <- read.csv(input$infocam$datapath,
                                    header = TRUE,
                                    sep = ";",
@@ -2071,7 +2100,14 @@ errcam <- reactive({
   
   camerr <- c(CamOkk,DurOkk,UtXOkk,UtYOkk,AllOk,AlOk)
   camerr
+  }
   
+  else {
+    d <- "! Le fichier chargé n'est pas au format .csv !"
+    f <- ""
+    err <- c(d,f,f,f,f,f)
+    
+  }
 })
 
 # encodage des texte en output
@@ -2120,6 +2156,13 @@ ProblemeCam <- reactive({
 errStat <- reactive({
   req(input$status)
   
+  right = function(text, num_char) {
+    substr(text, nchar(text) - (num_char-1), nchar(text))
+  }
+  
+  s <- as.character(right(input$status,3))
+  
+  if (s == as.character('csv')) { 
   df <- read.csv(input$status$datapath,
                   header = TRUE,
                   sep = ";",
@@ -2160,10 +2203,30 @@ errStat <- reactive({
   
   Staterr <- c(SpecOkk, IUCNOkk , AllOk, AlOk)
   Staterr
+  }
   
+  else {
+    
+    d <- "! Le fichier chargé n'est pas au format .csv !"
+    f <- ""
+    Staterr <- c(d,f,f,f)
+    
+  }
 })
 
 # encodage des message d'erreur en output 
+
+#extFile <- reactive({
+  
+#  right = function(text, num_char) {
+#    substr(text, nchar(text) - (num_char-1), nchar(text))
+ # }
+  
+  #s <- as.character(right(input$file,3))
+  
+   #s
+  
+#})
 
 output$erreurStat1 <- renderText({
   req(input$status)
