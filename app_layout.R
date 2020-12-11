@@ -825,7 +825,7 @@ server <- function(input, output, session) {
  observeEvent(input$infoRythmeActiv, {
    showModal(modalDialog(
      title = "Description détaillée du diagramme du rythme d'activité",
-     h5("Le diagramme du rythme d'activité reprend de manière horaire la somme du nombre d'individus observés pour le site et l'espèce 
+     h5("Le diagramme du rythme d'activité reprend de manière horaire la somme du nombre de détection pour le site et l'espèce 
         sélectionnés. Il permet de donner une indication de la période d'activité prédominante.",
         style = "text-align:justify"),
      h5("Il est possible d'obtenir cette analyse pour une ou plusieurs espèces, et pour un seul ou l'ensemble des sites.", 
