@@ -249,9 +249,9 @@ ui <- dashboardPage(
                              br(),
                              '"Jours" pour la colonne comprenant le nombre de journées'," d'activité des caméras ;",
                              br(),
-                             '"utm_x" pour la colonne comprenant la latitude ;',
+                             '"utm_x" pour la colonne comprenant la longitude ;',
                              br(),
-                             '"utm_y" pour la colonne comprenant la longitude.'),
+                             '"utm_y" pour la colonne comprenant la latitude.'),
                              style = "color:blue")
                     )
                     
