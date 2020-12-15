@@ -1844,91 +1844,49 @@ server <- function(input, output, session) {
     x <- names(df)
     
     
-    if (x[1] == "Species") {SpOk <- 1 }
-    else if (x[2] == "Species") {SpOk <-1 }
-    else if (x[3] == "Species") {SpOk <-1 }
-    else if (x[4] == "Species") {SpOk <-1 }
-    else if (x[5] == "Species") {SpOk <-1 }
-    else if (x[6] == "Species") {SpOk <-1 }
-    else if (x[7] == "Species") {SpOk <-1 }
+    if (any(x == "Species")) {SpOk <- 1 }
+ 
     
     if (SpOk == 1) {SOk <- ""}
     else { SOk <- "Erreur, impossible de trouver la colonne 'Species'. vérifiez la syntaxe du jeu de donnée"}
     
-    if (x[1] == "Camera") {CamOk <- 1 }
-    else if (x[2] == "Camera") {CamOk <-1 }
-    else if (x[3] == "Camera") {CamOk <-1 }
-    else if (x[4] == "Camera") {CamOk <-1 }
-    else if (x[5] == "Camera") {CamOk <-1 }
-    else if (x[6] == "Camera") {CamOk <-1 }
-    else if (x[7] == "Camera") {CamOk <-1 }
+    if (any(x == "Camera")) {CamOk <- 1 }
+
     
     if (CamOk == 1) {COk <- ""}
     else { COk <- "Erreur, impossible de trouver la colonne 'Camera'. vérifiez la syntaxe du jeu de donnée"}
     
-    if (x[1] == "Site") {SiOk <- 1 }
-    else if (x[2] == "Site") {SiOk <-1 }
-    else if (x[3] == "Site") {SiOk <-1 }
-    else if (x[4] == "Site") {SiOk <-1 }
-    else if (x[5] == "Site") {SiOk <-1 }
-    else if (x[6] == "Site") {SiOk <-1 }
-    else if (x[7] == "Site") {SiOk <-1 }
-    
+    if (any(x == "Site")) {SiOk <- 1 }
+
     if (SiOk == 1) {StOk <- ""}
     else { StOk <- "Erreur, impossible de trouver la colonne 'Site'. vérifiez la syntaxe du jeu de donnée"}
     
-    if (x[1] == "Individuals") {InOk <- 1 }
-    else if (x[2] == "Individuals") {InOk <-1 }
-    else if (x[3] == "Individuals") {InOk <-1 }
-    else if (x[4] == "Individuals") {InOk <-1 }
-    else if (x[5] == "Individuals") {InOk <-1 }
-    else if (x[6] == "Individuals") {InOk <-1 }
-    else if (x[7] == "Individuals") {InOk <-1 }
+    if (any(x == "Individuals")) {InOk <- 1 }
+
     
     if (InOk == 1) {IOk <- ""}
     else { IOk <- "Erreur, impossible de trouver la colonne 'Individuals'. vérifiez la syntaxe du jeu de donnée"}
     
-    if (x[1] == "Date") {DaOk <- 1 }
-    else if (x[2] == "Date") {DaOk <-1 }
-    else if (x[3] == "Date") {DaOk <-1 }
-    else if (x[4] == "Date") {DaOk <-1 }
-    else if (x[5] == "Date") {DaOk <-1 }
-    else if (x[6] == "Date") {DaOk <-1 }
-    else if (x[7] == "Date") {DaOk <-1 }
+    if (any(x == "Date")) {DaOk <- 1 }
+
     
     if (DaOk == 1) {DOk <- ""}
     else { DOk <- "Erreur, impossible de trouver la colonne 'Date'. vérifiez la syntaxe du jeu de donnée"}
     
     
-    if (x[1] == "Hour") {HoOk <- 1 }
-    else if (x[2] == "Hour") {HoOk <-1 }
-    else if (x[3] == "Hour") {HoOk <-1 }
-    else if (x[4] == "Hour") {HoOk <-1 }
-    else if (x[5] == "Hour") {HoOk <-1 }
-    else if (x[6] == "Hour") {HoOk <-1 }
-    else if (x[7] == "Hour") {HoOk <-1 }
+    if (any(x == "Hour")) {HoOk <- 1 }
+ 
     
     if (HoOk == 1) {HOk <- ""}
     else { HOk <- "Erreur, impossible de trouver la colonne 'Hour'. vérifiez la syntaxe du jeu de donnée"}
-    
-    if (x[1] == "Image1") {ImOk <- 1 }
-    else if (x[2] == "Image1") {ImOk <-1 }
-    else if (x[3] == "Image1") {ImOk <-1 }
-    else if (x[4] == "Image1") {ImOk <-1 }
-    else if (x[5] == "Image1") {ImOk <-1 }
-    else if (x[6] == "Image1") {ImOk <-1 }
-    else if (x[7] == "Image1") {ImOk <-1 }
-    
-    if (ImOk == 1) {IgOk <- ""}
-    else { IgOk <- "Erreur, impossible de trouver la colonne 'Image'. vérifiez la syntaxe du jeu de donnée"}
-    
-    AllOk <- (SpOk + CamOk + SiOk + InOk + DaOk + HoOk + ImOk)
+
+    AllOk <- (SpOk + CamOk + SiOk + InOk + DaOk + HoOk + 1)
     
     
     if (AllOk == 7) {AlOk <- ""}
     else {AlOk <- "Le fichier chargé ne correspond pas au format requis. veuillez charger une table de données conforme pour obtenir vos résultats. "}
     
-    err <- c(SOk, DOk, COk, StOk, IOk, HOk, IgOk, AllOk,AlOk,s)
+    err <- c(SOk, DOk, COk, StOk, IOk, HOk, "", AllOk,AlOk,s)
     err
   }
    
@@ -2043,54 +2001,25 @@ errcam <- reactive({
   
 
   
-  if (x[1] == "Jours") {DurOk <- 1 }
-  else if (x[2] == "Jours") {DurOk <-1 }
-  else if (x[3] == "Jours") {DurOk <-1 }
-  else if (x[4] == "Jours") {DurOk <-1 }
-  else if (x[5] == "Jours") {DurOk <-1 }
-  else if (x[6] == "Jours") {DurOk <-1 }
-  else if (x[7] == "Jours") {DurOk <-1 }
-  else if (x[8] == "Jours") {DurOk <-1 }
-  else if (x[9] == "Jous") {DurOk <-1 }
+  if (any(x == "Jours")) {DurOk <- 1 }
+
   
   if (DurOk == 1) {DurOkk <- ""}
   else { DurOkk <- "Erreur, impossible de trouver la colonne 'Jours'. vérifiez la syntaxe du jeu de donnée"}
   
-  if (x[1] == "Camera") {CamOk <- 1 }
-  else if (x[2] == "Camera") {CamOk <-1 }
-  else if (x[3] == "Camera") {CamOk <-1 }
-  else if (x[4] == "Camera") {CamOk <-1 }
-  else if (x[5] == "Camera") {CamOk <-1 }
-  else if (x[6] == "Camera") {CamOk <-1 }
-  else if (x[7] == "Camera") {CamOk <-1 }
-  else if (x[8] == "Camera") {CamOk <-1 }
-  else if (x[9] == "Camera") {CamOk <-1 }
+  if (any(x == "Camera")) {CamOk <- 1 }
 
   if (CamOk == 1) {CamOkk <- ""}
   else { CamOkk <- "Erreur, impossible de trouver la colonne 'Camera'. vérifiez la syntaxe du jeu de donnée"}
   
-  if (x[1] == "utm_x") {UtXOk <- 1 }
-  else if (x[2] == "utm_x") {UtXOk <-1 }
-  else if (x[3] == "utm_x") {UtXOk <-1 }
-  else if (x[4] == "utm_x") {UtXOk <-1 }
-  else if (x[5] == "utm_x") {UtXOk <-1 }
-  else if (x[6] == "utm_x") {UtXOk <-1 }
-  else if (x[7] == "utm_x") {UtXOk <-1 }
-  else if (x[8] == "utm_x") {UtXOk <-1 }
-  else if (x[9] == "utm_x") {UtXOk <-1 }
+  if (any(x == "utm_x")) {UtXOk <- 1 }
+
   
   if (UtXOk == 1) {UtXOkk <- ""}
   else { UtXOkk <- "Erreur, impossible de trouver la colonne 'utm_x'. vérifiez la syntaxe du jeu de donnée"}
   
-  if (x[1] == "utm_y") {UtYOk <- 1 }
-  else if (x[2] == "utm_y") {UtYOk <-1 }
-  else if (x[3] == "utm_y") {UtYOk <-1 }
-  else if (x[4] == "utm_y") {UtYOk <-1 }
-  else if (x[5] == "utm_y") {UtYOk <-1 }
-  else if (x[6] == "utm_y") {UtYOk <-1 }
-  else if (x[7] == "utm_y") {UtYOk <-1 }
-  else if (x[8] == "utm_y") {UtYOk <-1 }
-  else if (x[9] == "utm_y") {UtYOk <-1 }
+  if (any(x == "utm_y")) {UtYOk <- 1 }
+
   
   if (UtYOk == 1) {UtYOkk <- ""}
   else { UtYOkk <- "Erreur, impossible de trouver la colonne 'utm_y'. vérifiez la syntaxe du jeu de donnée"}
@@ -2185,15 +2114,14 @@ errStat <- reactive({
   
   ## Vérification du nom des colonnes et de leur présence
   
-  if (x[1] == "Species") {SpecOk <- 1 }
-  else if (x[2] == "Species") {SpecOk <-1 }
+  if (any(x == "Species")) {SpecOk <- 1 }
 
   
   if (SpecOk == 1) {SpecOkk <- ""}
   else { SpecOkk <- "Erreur, impossible de trouver la colonne 'Species'. vérifiez la syntaxe du jeu de donnée"}
   
-  if (x[1] == "IUCN") {IUCNOk <- 1 }
-  else if (x[2] == "IUCN") {IUCNOk <-1 }
+  if (any(x == "IUCN")) {IUCNOk <- 1 }
+
 
   
   if (IUCNOk == 1) {IUCNOkk <- ""}
