@@ -479,11 +479,11 @@ server <- function(input, output, session) {
     
     req(input$infocam)
     infocamera <- infoCam()
-    
-    infocamera$utm_x <- as.numeric(infocamera$utm_x)
-    infocamera$utm_y <- as.numeric(infocamera$utm_y)
-    infocamera1 <- na.omit(infocamera)
-    infocamera1
+    infocamera1 <- dplyr::select(infocamera,Camera,Jours,utm_x,utm_y)
+    infocamera1$utm_x <- as.numeric(infocamera$utm_x)
+    infocamera1$utm_y <- as.numeric(infocamera$utm_y)
+    infocamera2 <- na.omit(infocamera1)
+    infocamera2
   })
   
   CameraJour <- reactive({   ### ! Note + Verif colonnes + utiliser directement infoCam()################
@@ -1274,9 +1274,8 @@ server <- function(input, output, session) {
     
     req(coordcam())
     infos_cam <- coordcam()
-    
     infos_cam$Camera <- as.character(infos_cam$Camera)
-    infos_cam1 = dplyr::select(infos_cam,utm_x:utm_y,Camera)
+    infos_cam1 <- infos_cam
     
     
     infos_cam1$Camera=as.character(infos_cam1$Camera)
@@ -1344,7 +1343,7 @@ server <- function(input, output, session) {
            x = "utm_x", y = "utm_y") +
       theme_dark() +
       theme(
-        legend.position = c(1.11, 0.5),
+        legend.position = c(1.13, 0.5),
         legend.direction = "vertical",
         legend.key.size = unit(0.5, "cm"),
         legend.key.width = unit(0.5,"cm"),
@@ -1398,7 +1397,7 @@ server <- function(input, output, session) {
            x = "utm_x", y = "utm_y") +
       theme_dark() +
       theme(
-        legend.position = c(1.11, 0.5),
+        legend.position = c(1.13, 0.5),
         legend.direction = "vertical",
         legend.key.size = unit(0.5, "cm"),
         legend.key.width = unit(0.5,"cm"),
@@ -1567,7 +1566,7 @@ server <- function(input, output, session) {
   req(coordcam())
   infos_cam <- coordcam()
   # On sélectionne les colonnes d'intérêt dans un nouveau df info_cam1
-  infos_cam1 <- dplyr::select(infos_cam,Camera,utm_x,utm_y,Jours)
+  infos_cam1 <- infos_cam
   infos_cam1$Jours <- as.numeric(infos_cam1$Jours)
   # On s'assure que toutes les caméras sont bien écrites en character
   infos_cam1$Camera=as.character(infos_cam1$Camera)
