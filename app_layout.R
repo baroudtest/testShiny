@@ -215,7 +215,7 @@ ui <- dashboardPage(
                     hr(),
                     h4("Table de données d'inventaire : "),
                     h5('1) Le jeu de données doit être au format de sortie .csv avec ";" comme séparateur 
-                      et "." comme marque des décimales. Il ne doit comporter que les colonnes suivantes, nommées et ordonnées comme suit :',
+                      et "." comme marque des décimales. Il doit comporter les colonnes suivantes, nommées comme suit :',
                       style = "text-align:justify;"),
                     h5(div(em('"Species"',
                              br(),
@@ -665,7 +665,7 @@ server <- function(input, output, session) {
   observeEvent(probleme(), {
     showModal(modalDialog(
       title = "Fichier non conforme",
-      paste("Le fichier chargé ne correspond pas au format requis. veuillez charger une table de données conforme pour obtenir vos résultats. ", sep=""),
+      paste("Le fichier chargé ne correspond pas au format requis. Veuillez charger une table de données conforme pour obtenir vos résultats. ", sep=""),
       br(),
       paste(err()[1]),
       br(),
@@ -688,7 +688,7 @@ server <- function(input, output, session) {
   observeEvent(ProblemeStat(), {
     showModal(modalDialog(
       title = "Fichier des status UICN non conforme",
-      paste("Le fichier chargé ne correspond pas au format requis. veuillez charger une table de données conforme pour obtenir vos résultats. ", sep=""),
+      paste("Le fichier chargé ne correspond pas au format requis. Veuillez charger une table de données conforme pour obtenir vos résultats. ", sep=""),
       br(),
       br(),
       paste(errStat()[1]),
@@ -703,7 +703,7 @@ server <- function(input, output, session) {
   observeEvent(ProblemeCam(), {
     showModal(modalDialog(
       title = "Fichier d'info caméra non conforme",
-      paste("Le fichier chargé ne correspond pas au format requis. veuillez charger une table de données conforme pour obtenir vos résultats. ", sep=""),
+      paste("Le fichier chargé ne correspond pas au format requis. Veuillez charger une table de données conforme pour obtenir vos résultats. ", sep=""),
       br(),
       br(),
       paste(errcam()[1]),
