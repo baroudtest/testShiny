@@ -406,6 +406,10 @@ ui <- dashboardPage(
                                 status = "warning",
                                 solidHeader = T,
                                 withSpinner(plotOutput("carte_richesse_spe")),
+                                selectizeInput(inputId = "selectLoc_Map1",
+                                               label = "Sélection du site",
+                                               choices = "",
+                                               selected =""),
                                 downloadButton("downloadMap1", "Télécharger la carte")
                        ),
                        
@@ -414,6 +418,10 @@ ui <- dashboardPage(
                                 status = "warning",
                                 solidHeader = T,
                                 withSpinner(plotOutput("carte_espèces_men")),
+                                selectizeInput(inputId = "selectLoc_Map2",
+                                               label = "Sélection du site",
+                                               choices = "",
+                                               selected =""),
                                 downloadButton("downloadMap2", "Télécharger la carte")
                        ),
                        
@@ -1226,9 +1234,9 @@ server <- function(input, output, session) {
   observe({
     updateSelectizeInput(
       session,
-      inputId = "selectSp_carto",
-      choices = c("All", data()$Species),
-      selected = "All"
+      inputId = "selectLoc_Map1",
+      choices = c("Tous les sites", data()$Site),
+      selected = "Tous les sites"
     )  
   })
   
@@ -1236,10 +1244,13 @@ server <- function(input, output, session) {
     as.numeric(input$epsg)
   })
   
-  donnees_cartes_richesse_spe <- reactive({ 
+  donnees_cartes_richesse_spe1 <- reactive({ 
     
     req(data())
     dfinal <- data()
+    k <- as.character(input$selectLoc_Map1) 
+    if(input$selectLoc_Map1 != "Tous les sites")
+      dfinal <- dplyr::filter(dfinal, Site == k)
     # Création du jeu de données aggrégées sans coordonnées : 
     # On aggrège d'abord les données des individus par espèce et par caméra !
     n_indiv_cam_esp <- aggregate(Individuals ~ Species+Camera, data = dfinal, sum)
@@ -1276,13 +1287,15 @@ server <- function(input, output, session) {
     req(coordcam())
     infos_cam <- coordcam()
     infos_cam$Camera <- as.character(infos_cam$Camera)
-    infos_cam1 <- infos_cam
+    infos_cam1 <- dplyr::select(infos_cam,Camera,utm_x,utm_y)
     
     
     infos_cam1$Camera=as.character(infos_cam1$Camera)
     Camdon$Camera=as.character(Camdon$Camera) # On transforme les valeurs des champs Camera en character afin de pouvoir effectuer la jointure
     
-    Camdon2 = right_join(Camdon,infos_cam1, by = c("Camera" = "Camera")) # C'est ainsi que l'on effectue la jointure,
+    Camdon2 <- merge(Camdon,infos_cam1,by=c("Camera","Camera"),all.x=T)
+    
+    # C'est ainsi que l'on effectue la jointure,
     # La fonction left_join permet de réaliser une jointure gauche, on va associer à chaque Camera de la variable Camdon les données des caméras d'infos_cam. Si un champ de la variable 
     # infos_cam ne contenait pas de valeur pour une ou certaines des camera de Camdon, 
     # on aurai des NO_DATA sur Camdon2 pour les lignes manquantes. De plus, s'il y avait des 
@@ -1305,17 +1318,97 @@ server <- function(input, output, session) {
     
   })
   
+  observe({
+    updateSelectizeInput(
+      session,
+      inputId = "selectLoc_Map2",
+      choices = c("Tous les sites", data()$Site),
+      selected = "Tous les sites"
+    )  
+  })
   
+  donnees_cartes_richesse_spe2 <- reactive({ 
+    
+    req(data())
+    dfinal <- data()
+    k <- as.character(input$selectLoc_Map2) 
+    if(input$selectLoc_Map2 != "Tous les sites")
+      dfinal <- dfinal[dfinal$Site == k,]
+    # Création du jeu de données aggrégées sans coordonnées : 
+    # On aggrège d'abord les données des individus par espèce et par caméra !
+    n_indiv_cam_esp <- aggregate(Individuals ~ Species+Camera, data = dfinal, sum)
+    # Ensuite, dans une colonne individuals, on calcule le nombre d'espèce par caméra ! 
+    n_esp_cam <- aggregate(Individuals ~ Camera, data = n_indiv_cam_esp, length)
+    # On renomme chaque fois les champs issus de double aggregate par length, par un nom qui correspond mieux aux données obtenues
+    n_esp_cam <- rename(n_esp_cam,"Nbesp"="Individuals" )
+    
+    # On cherche à inclure le statut IUCN 
+    # On lie la table initiale à la table IUCN par l'espèce (ainsi on à le statut pour chaque espèce présente dans la liste)
+    req(IUCN())
+    UICN <- IUCN()
+    datEN <- merge(dfinal,UICN,by="Species",all.x=T)
+    # On ne garde dans un nouveau d.f que les individus qui ont un statut IUCN EN ou CR.
+    datEN <- dplyr::filter(datEN, IUCN=="EN" | IUCN=="CR")
+    # On aggrège alors les nb d'indiv par espèce et par caméra.
+    EN <- aggregate(Individuals ~ Species + Camera, data = datEN, sum)
+    # On aggrège le nombre d'entrées par caméra pour obtenir le nb d'esp en danger (CR ou EN) par caméra.
+    ENCAM <- aggregate (Individuals ~ Camera, data = EN, length)
+    ENCAM <- rename(ENCAM,"NespEN"="Individuals" ) 
+    # On aggrège aussi le nb d'individus en danger obvervés par caméra (effectif en danger)
+    ENIND <- aggregate (Individuals ~ Camera, data= EN, sum)
+    ENIND <- rename(ENIND,"EffespEN"="Individuals")
+    
+    # On merge tout dans une table qui contient, pour chaque caméra, le nb d'espèce, 
+    # le nb d'espèce en danger (CR ou EN) et le nb d'individus observés de ces espèces en danger : 
+    Camdon <- merge(n_esp_cam,ENCAM,by=c("Camera","Camera"),all=T)
+    Camdon <- merge(Camdon,ENIND,by=c("Camera","Camera"),all=T)
+    
+    # On vire les N.A (créés quand aucune espèce EN ou CR n'est présente
+    # pour une caméra particulière) et on les remplace par 0 :
+    Camdon[is.na(Camdon)]<-0
+    
+    
+    req(coordcam())
+    infos_cam <- coordcam()
+    infos_cam$Camera <- as.character(infos_cam$Camera)
+    infos_cam1 <- dplyr::select(infos_cam,Camera,utm_x,utm_y)
+    
+    
+    infos_cam1$Camera=as.character(infos_cam1$Camera)
+    Camdon$Camera=as.character(Camdon$Camera) # On transforme les valeurs des champs Camera en character afin de pouvoir effectuer la jointure
+    
+    Camdon2 <- merge(Camdon,infos_cam1,by=c("Camera","Camera"),all.x=T) 
+    
+    # Conversion du .csv en objet sf ! (par défaut SCR = 4326/WGS84 pour ces coordonnées UTM) --------------------
+    
+    req(EPSG())
+    epsg <- EPSG()
+    
+    Camdon2=st_as_sf(Camdon2,coords=c("utm_y","utm_x"),crs=epsg)
+    
+    
+    Camdon2
+    
+  })
   
   # Test carto richesse spé :
+  
+  emprise1 <- reactive ({
+  req(EPSG())
+  epsg <- EPSG()
+  req(donnees_cartes_richesse_spe1())
+  richespe <- donnees_cartes_richesse_spe1()
+  emmprise <- st_bbox(richespe)
+  })
   
   carte_richesse_spe1 <- reactive ({ 
     # Calcul et affectation des données de l'emprise de la carte :
     req(EPSG())
     epsg <- EPSG()
-    req(donnees_cartes_richesse_spe())
-    richespe <- donnees_cartes_richesse_spe()
-    emmprise <- st_bbox(richespe)
+    req(donnees_cartes_richesse_spe1())
+    richespe <- donnees_cartes_richesse_spe1()
+    req(emprise1())
+    emmprise <- emprise1()
     xmin <- emmprise[1]
     ymin <- emmprise[2]
     xmax <- emmprise[3]
@@ -1344,7 +1437,7 @@ server <- function(input, output, session) {
            x = "utm_x", y = "utm_y") +
       theme_dark() +
       theme(
-        legend.position = c(1.35, 0.5),
+        legend.position = c(1.25, 0.5),
         legend.direction = "vertical",
         legend.key.size = unit(0.5, "cm"),
         legend.key.width = unit(0.5,"cm"),
@@ -1367,8 +1460,8 @@ server <- function(input, output, session) {
     # Calcul et affectation des données de l'emprise de la carte :
     req(EPSG())
     epsg <-EPSG()
-    req(donnees_cartes_richesse_spe())
-    richespe <- donnees_cartes_richesse_spe()
+    req(donnees_cartes_richesse_spe2())
+    richespe <- donnees_cartes_richesse_spe2()
     emmprise <- st_bbox(richespe)
     xmin <- emmprise[1]
     ymin <- emmprise[2]
@@ -1398,7 +1491,7 @@ server <- function(input, output, session) {
            x = "utm_x", y = "utm_y") +
       theme_dark() +
       theme(
-        legend.position = c(1.35, 0.5),
+        legend.position = c(1.25, 0.5),
         legend.direction = "vertical",
         legend.key.size = unit(0.5, "cm"),
         legend.key.width = unit(0.5,"cm"),
@@ -1434,7 +1527,7 @@ server <- function(input, output, session) {
     filename = function() {paste("Map_richesspe", '.png', sep='') },
     content = function(file) {
       
-      ggsave(file,plot=carte_richesse_spe1(),width=18,height = 6)
+      ggsave(file,plot=carte_richesse_spe1(),width=19,height = 7)
       
     }
     
@@ -1448,7 +1541,7 @@ server <- function(input, output, session) {
     filename = function() {paste("Map_IUCN",'.png', sep='') },
     content = function(file) {
       
-      ggsave(file,plot=carte_espèces_men1(),width=18,height = 6)
+      ggsave(file,plot=carte_espèces_men1(),width=19,height = 7)
       
     }
     
@@ -1615,7 +1708,7 @@ server <- function(input, output, session) {
   observe({
     updateSelectizeInput(
       session,
-      inputId = "selectSp_graph",
+      inputId = "input$selectSp_graph",
       choices = c("Toutes les espèces", data()$Species),
       selected = "Toutes les espèces"
     )  
