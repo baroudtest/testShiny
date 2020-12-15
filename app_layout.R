@@ -215,7 +215,7 @@ ui <- dashboardPage(
                     hr(),
                     h4("Table de données d'inventaire : "),
                     h5('1) Le jeu de données doit être au format de sortie .csv avec ";" comme séparateur 
-                      et "." comme marque des décimales. Les colonnes doivent comporter ces noms exacts, et être ordonnées comme suit :',
+                      et "." comme marque des décimales. Il ne doit comporter que les colonnes suivantes, nommées et ordonnées comme suit :',
                       style = "text-align:justify;"),
                     h5(div(em('"Species"',
                              br(),
