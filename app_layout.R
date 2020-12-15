@@ -1708,7 +1708,7 @@ server <- function(input, output, session) {
   observe({
     updateSelectizeInput(
       session,
-      inputId = "input$selectSp_graph",
+      inputId = "selectSp_graph",
       choices = c("Toutes les espèces", data()$Species),
       selected = "Toutes les espèces"
     )  
@@ -1717,7 +1717,7 @@ server <- function(input, output, session) {
   observe({
     updateSelectizeInput(
       session,
-      inputId = "input$selectLoc_graph",
+      inputId = "selectLoc_graph",
       choices = c("Tous les sites", data()$Site),
       selected = "Tous les sites"
     )  
@@ -1737,7 +1737,7 @@ server <- function(input, output, session) {
     #df <- data()
     # si "All" est encodé, graphique de toute les epsèces, si le nome d'une espèe est encodé, le prend en compte
     if(input$selectLoc_graph != "Tous les sites")
-     df <- df[df$Site == k,]
+      df <- df[df$Site == k,]
     
     if (input$selectSp_graph != "Toutes les espèces")
       df <- df[df$Species == x,]
@@ -1799,13 +1799,12 @@ server <- function(input, output, session) {
     filename = function() {paste(input$selectSp_graph,"graph24", '.svg', sep='') },
     content = function(file) {
       
-    svg(file)
-    print(graph24())
-    dev.off()
+      svg(file)
+      print(graph24())
+      dev.off()
     }
     
   )
-
 ########################################################################     
 ########################################################################
   #Sélection esp et site pour le pie chart
