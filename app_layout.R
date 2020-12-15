@@ -1049,7 +1049,7 @@ server <- function(input, output, session) {
           a <- lubridate::hms(as.character(heure))
           c <- lubridate::hour(a)
           if (c[c(1)] > 18) { }
-          else  if (c[c(1)] < 6) {b <- b + data()$Individuals[c(i)]}
+          else  if (c[c(1)] < 6) {b <- b + 1}
           z <- z +1
           
         }
@@ -1088,7 +1088,7 @@ server <- function(input, output, session) {
       for (i in 1:ligne) {
         if (data()$Site[i]== LeSite) {
           if (data()$Species[c(i)] == "Homo sapiens")
-          {b <- b + data()$Individuals[c(i)]
+          {b <- b + 1
           
           }
         }
