@@ -543,7 +543,14 @@ server <- function(input, output, session) {
     # On lance la boucle pour chaque niveaux j du facteur "niveaux" (pour chaque caméra donc)
     for (j in 1:as.numeric(niveaux)) {
       # On crée un d.f avec 8 colonnes (Une en plus pour les données compilées "Date&Hour" qui viennent après) nommées arbitrairement (nommées automatiquement de X1 à X8)
-      datf <- data.frame(1,2,3,4,5,6,7,8)
+      datf <- data.frame(Species=as.character(),
+                         Camera=as.character(),
+                         Site=as.character(),
+                         Individuals=as.numeric(),
+                         Date=as.character(),
+                         Hour=as.character(),
+                         YMDHMS=as.character(),
+                         stringsAsFactors = FALSE)
       # Ce d.f va permettre de stocker les lignes retenues et sera lui même stocké dans la liste Y au passage de la boucle au niveau suivant.
       # On extrait de la largelist le df qui concerne une caméra particulière
       dfSite <- as.data.frame(LargeList[[j]])
