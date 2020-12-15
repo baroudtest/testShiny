@@ -1343,7 +1343,7 @@ server <- function(input, output, session) {
            x = "utm_x", y = "utm_y") +
       theme_dark() +
       theme(
-        legend.position = c(1.13, 0.5),
+        legend.position = c(1.35, 0.5),
         legend.direction = "vertical",
         legend.key.size = unit(0.5, "cm"),
         legend.key.width = unit(0.5,"cm"),
@@ -1397,7 +1397,7 @@ server <- function(input, output, session) {
            x = "utm_x", y = "utm_y") +
       theme_dark() +
       theme(
-        legend.position = c(1.13, 0.5),
+        legend.position = c(1.35, 0.5),
         legend.direction = "vertical",
         legend.key.size = unit(0.5, "cm"),
         legend.key.width = unit(0.5,"cm"),
