@@ -514,6 +514,7 @@ server <- function(input, output, session) {
                   sep = ";",
                   quote = '"',
                   colClasses = "character")
+    df <- df[,c("Species","Camera","Site","Individuals","Date","Hour")]
     df$Individuals <- as.numeric(df$Individuals)
     #exclure no_sp, indetermined
     no_sp <- which(df$Species == "no_sp")
