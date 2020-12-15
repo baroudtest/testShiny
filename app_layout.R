@@ -1717,7 +1717,7 @@ server <- function(input, output, session) {
   observe({
     updateSelectizeInput(
       session,
-      inputId = "selectLoc_graph",
+      inputId = "input$selectLoc_graph",
       choices = c("Tous les sites", data()$Site),
       selected = "Tous les sites"
     )  
