@@ -215,7 +215,7 @@ ui <- dashboardPage(
                     hr(),
                     h4("Table de données d'inventaire : "),
                     h5('1) Le jeu de données doit être au format de sortie .csv avec ";" comme séparateur 
-                      et "." comme marque des décimales. Il ne doit comporter que les colonnes suivantes, nommées et ordonnées comme suit :',
+                      et "." comme marque des décimales. Il doit comporter les colonnes suivantes, nommées comme suit :',
                       style = "text-align:justify;"),
                     h5(div(em('"Species"',
                              br(),
@@ -514,6 +514,7 @@ server <- function(input, output, session) {
                   sep = ";",
                   quote = '"',
                   colClasses = "character")
+    df <- df[,c("Species","Camera","Site","Individuals","Date","Hour")]
     df$Individuals <- as.numeric(df$Individuals)
     #exclure no_sp, indetermined
     no_sp <- which(df$Species == "no_sp")
@@ -664,7 +665,7 @@ server <- function(input, output, session) {
   observeEvent(probleme(), {
     showModal(modalDialog(
       title = "Fichier non conforme",
-      paste("Le fichier chargé ne correspond pas au format requis. veuillez charger une table de données conforme pour obtenir vos résultats. ", sep=""),
+      paste("Le fichier chargé ne correspond pas au format requis. Veuillez charger une table de données conforme pour obtenir vos résultats. ", sep=""),
       br(),
       paste(err()[1]),
       br(),
@@ -687,7 +688,7 @@ server <- function(input, output, session) {
   observeEvent(ProblemeStat(), {
     showModal(modalDialog(
       title = "Fichier des status UICN non conforme",
-      paste("Le fichier chargé ne correspond pas au format requis. veuillez charger une table de données conforme pour obtenir vos résultats. ", sep=""),
+      paste("Le fichier chargé ne correspond pas au format requis. Veuillez charger une table de données conforme pour obtenir vos résultats. ", sep=""),
       br(),
       br(),
       paste(errStat()[1]),
@@ -702,7 +703,7 @@ server <- function(input, output, session) {
   observeEvent(ProblemeCam(), {
     showModal(modalDialog(
       title = "Fichier d'info caméra non conforme",
-      paste("Le fichier chargé ne correspond pas au format requis. veuillez charger une table de données conforme pour obtenir vos résultats. ", sep=""),
+      paste("Le fichier chargé ne correspond pas au format requis. Veuillez charger une table de données conforme pour obtenir vos résultats. ", sep=""),
       br(),
       br(),
       paste(errcam()[1]),
@@ -1854,43 +1855,43 @@ server <- function(input, output, session) {
  
     
     if (SpOk == 1) {SOk <- ""}
-    else { SOk <- "Erreur, impossible de trouver la colonne 'Species'. vérifiez la syntaxe du jeu de donnée"}
+    else { SOk <- "Erreur, impossible de trouver la colonne 'Species'. Vérifiez la syntaxe du jeu de donnée"}
     
     if (any(x == "Camera")) {CamOk <- 1 }
 
     
     if (CamOk == 1) {COk <- ""}
-    else { COk <- "Erreur, impossible de trouver la colonne 'Camera'. vérifiez la syntaxe du jeu de donnée"}
+    else { COk <- "Erreur, impossible de trouver la colonne 'Camera'. Vérifiez la syntaxe du jeu de donnée"}
     
     if (any(x == "Site")) {SiOk <- 1 }
 
     if (SiOk == 1) {StOk <- ""}
-    else { StOk <- "Erreur, impossible de trouver la colonne 'Site'. vérifiez la syntaxe du jeu de donnée"}
+    else { StOk <- "Erreur, impossible de trouver la colonne 'Site'. Vérifiez la syntaxe du jeu de donnée"}
     
     if (any(x == "Individuals")) {InOk <- 1 }
 
     
     if (InOk == 1) {IOk <- ""}
-    else { IOk <- "Erreur, impossible de trouver la colonne 'Individuals'. vérifiez la syntaxe du jeu de donnée"}
+    else { IOk <- "Erreur, impossible de trouver la colonne 'Individuals'. Vérifiez la syntaxe du jeu de donnée"}
     
     if (any(x == "Date")) {DaOk <- 1 }
 
     
     if (DaOk == 1) {DOk <- ""}
-    else { DOk <- "Erreur, impossible de trouver la colonne 'Date'. vérifiez la syntaxe du jeu de donnée"}
+    else { DOk <- "Erreur, impossible de trouver la colonne 'Date'. Vérifiez la syntaxe du jeu de donnée"}
     
     
     if (any(x == "Hour")) {HoOk <- 1 }
  
     
     if (HoOk == 1) {HOk <- ""}
-    else { HOk <- "Erreur, impossible de trouver la colonne 'Hour'. vérifiez la syntaxe du jeu de donnée"}
+    else { HOk <- "Erreur, impossible de trouver la colonne 'Hour'. Vérifiez la syntaxe du jeu de donnée"}
 
     AllOk <- (SpOk + CamOk + SiOk + InOk + DaOk + HoOk + 1)
     
     
     if (AllOk == 7) {AlOk <- ""}
-    else {AlOk <- "Le fichier chargé ne correspond pas au format requis. veuillez charger une table de données conforme pour obtenir vos résultats. "}
+    else {AlOk <- "Le fichier chargé ne correspond pas au format requis. Veuillez charger une table de données conforme pour obtenir vos résultats. "}
     
     err <- c(SOk, DOk, COk, StOk, IOk, HOk, "", AllOk,AlOk,s)
     err
