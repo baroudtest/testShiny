@@ -1855,43 +1855,43 @@ server <- function(input, output, session) {
  
     
     if (SpOk == 1) {SOk <- ""}
-    else { SOk <- "Erreur, impossible de trouver la colonne 'Species'. vérifiez la syntaxe du jeu de donnée"}
+    else { SOk <- "Erreur, impossible de trouver la colonne 'Species'. Vérifiez la syntaxe du jeu de donnée"}
     
     if (any(x == "Camera")) {CamOk <- 1 }
 
     
     if (CamOk == 1) {COk <- ""}
-    else { COk <- "Erreur, impossible de trouver la colonne 'Camera'. vérifiez la syntaxe du jeu de donnée"}
+    else { COk <- "Erreur, impossible de trouver la colonne 'Camera'. Vérifiez la syntaxe du jeu de donnée"}
     
     if (any(x == "Site")) {SiOk <- 1 }
 
     if (SiOk == 1) {StOk <- ""}
-    else { StOk <- "Erreur, impossible de trouver la colonne 'Site'. vérifiez la syntaxe du jeu de donnée"}
+    else { StOk <- "Erreur, impossible de trouver la colonne 'Site'. Vérifiez la syntaxe du jeu de donnée"}
     
     if (any(x == "Individuals")) {InOk <- 1 }
 
     
     if (InOk == 1) {IOk <- ""}
-    else { IOk <- "Erreur, impossible de trouver la colonne 'Individuals'. vérifiez la syntaxe du jeu de donnée"}
+    else { IOk <- "Erreur, impossible de trouver la colonne 'Individuals'. Vérifiez la syntaxe du jeu de donnée"}
     
     if (any(x == "Date")) {DaOk <- 1 }
 
     
     if (DaOk == 1) {DOk <- ""}
-    else { DOk <- "Erreur, impossible de trouver la colonne 'Date'. vérifiez la syntaxe du jeu de donnée"}
+    else { DOk <- "Erreur, impossible de trouver la colonne 'Date'. Vérifiez la syntaxe du jeu de donnée"}
     
     
     if (any(x == "Hour")) {HoOk <- 1 }
  
     
     if (HoOk == 1) {HOk <- ""}
-    else { HOk <- "Erreur, impossible de trouver la colonne 'Hour'. vérifiez la syntaxe du jeu de donnée"}
+    else { HOk <- "Erreur, impossible de trouver la colonne 'Hour'. Vérifiez la syntaxe du jeu de donnée"}
 
     AllOk <- (SpOk + CamOk + SiOk + InOk + DaOk + HoOk + 1)
     
     
     if (AllOk == 7) {AlOk <- ""}
-    else {AlOk <- "Le fichier chargé ne correspond pas au format requis. veuillez charger une table de données conforme pour obtenir vos résultats. "}
+    else {AlOk <- "Le fichier chargé ne correspond pas au format requis. Veuillez charger une table de données conforme pour obtenir vos résultats. "}
     
     err <- c(SOk, DOk, COk, StOk, IOk, HOk, "", AllOk,AlOk,s)
     err
